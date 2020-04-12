@@ -6,7 +6,7 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.unhuman.couchbaseui.entities.BucketCollection;
-import com.unhuman.couchbaseui.entities.ClusterConfig;
+import com.unhuman.couchbaseui.entities.ClusterConnection;
 import com.unhuman.couchbaseui.utils.Utilities;
 import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
@@ -29,47 +29,47 @@ public class CouchbaseClientManager {
     private static final String CLUSTER_MAP_NODES = "nodes";
     private static final String CLUSTER_MAP_SERVICES = "services";
 
-    Map<ClusterConfig, Cluster> connectedClusters;
+    Map<ClusterConnection, Cluster> connectedClusters;
 
     public CouchbaseClientManager() {
         this.connectedClusters = new HashMap<>();
     }
 
-    public Collection getBucketCollection(ClusterConfig clusterConfig, BucketCollection bucketCollection)
+    public Collection getBucketCollection(ClusterConnection clusterConnection, BucketCollection bucketCollection)
             throws IOException, JSONException {
         if (Utilities.stringIsNullOrEmpty(bucketCollection.getBucketName())) {
             throw new RuntimeException("Bucket Name must be provided");
         }
 
-        Bucket bucket = getCluster(clusterConfig).bucket(bucketCollection.getBucketName());
+        Bucket bucket = getCluster(clusterConnection).bucket(bucketCollection.getBucketName());
         return (bucketCollection.hasCollectionName())
                 ? bucket.collection(bucketCollection.getCollectionName())
                 : bucket.defaultCollection();
     }
 
-    public Cluster getCluster(ClusterConfig clusterConfig) throws IOException, JSONException {
+    public Cluster getCluster(ClusterConnection clusterConnection) throws IOException, JSONException {
         // Check the local cache
-        if (connectedClusters.containsKey(clusterConfig)) {
-            return connectedClusters.get(clusterConfig);
+        if (connectedClusters.containsKey(clusterConnection)) {
+            return connectedClusters.get(clusterConnection);
         }
 
         // connect to get the cluster map
         Resty restHandler = new Resty();
         // the build in authentication doesn't work as expected, so we add our own header
         //restHandler.authenticate("http://" + cluster, user, password);
-        restHandler.withHeader("Authorization", clusterConfig.getEncodedBasicCredentials());
+        restHandler.withHeader("Authorization", clusterConnection.getEncodedBasicCredentials());
         restHandler.withHeader("Accept", "application/json");
 
         // TODO: Support other protocols, cleanup
-        JSONResource resource = restHandler.json("http://" + clusterConfig.getHost() + ":8091" + CLUSTER_MAP_ENDPOINT);
+        JSONResource resource = restHandler.json("http://" + clusterConnection.getHost() + ":8091" + CLUSTER_MAP_ENDPOINT);
         JSONObject responseContents = resource.object();
         List<String> kvNodes = getKVNodes(responseContents);
 
         // connect to the cluster (right now, it just picks first item out of cluster map)
         ClusterOptions clusterOptions =
-                clusterOptions(PasswordAuthenticator.create(clusterConfig.getUser(), clusterConfig.getPassword()));
+                clusterOptions(PasswordAuthenticator.create(clusterConnection.getUser(), clusterConnection.getPassword()));
         Cluster cluster = Cluster.connect(kvNodes.get(0), clusterOptions);
-        connectedClusters.put(clusterConfig, cluster);
+        connectedClusters.put(clusterConnection, cluster);
         return cluster;
     }
 

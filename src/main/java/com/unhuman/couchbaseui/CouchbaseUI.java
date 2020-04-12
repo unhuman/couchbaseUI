@@ -14,16 +14,19 @@ import com.couchbase.client.java.kv.MutationResult;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.query.QueryResult;
+import com.unhuman.couchbaseui.config.ClusterConfig;
+import com.unhuman.couchbaseui.config.ConfigFileManager;
+import com.unhuman.couchbaseui.config.CouchbaseUIConfig;
+import com.unhuman.couchbaseui.config.UserConfig;
 import com.unhuman.couchbaseui.couchbase.CouchbaseClientManager;
 import com.unhuman.couchbaseui.entities.BucketCollection;
-import com.unhuman.couchbaseui.entities.ClusterConfig;
+import com.unhuman.couchbaseui.entities.ClusterConnection;
 import com.unhuman.couchbaseui.utils.Utilities;
 import us.monoid.json.JSONException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.IOException;
 import java.util.List;
 
@@ -34,6 +37,7 @@ public class CouchbaseUI {
 
     private final CouchbaseClientManager couchbase;
     private final ObjectWriter prettyPrintingWriter;
+    private CouchbaseUIConfig config;
 
     private JPanel panel;
     private JComboBox comboClusterPicker;
@@ -78,6 +82,8 @@ public class CouchbaseUI {
         textStatusBgColor = textStatus.getBackground();
 
         couchbase = new CouchbaseClientManager();
+
+        /** Set up all the listeners */
 
         // Setup KV Create Document button
         createButton.addActionListener(new ActionListener() {
@@ -198,7 +204,7 @@ public class CouchbaseUI {
         buttonQuery.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvente) {
                 try {
-                    ClusterConfig clusterConfig = createClusterConfig();
+                    ClusterConnection clusterConnection = createClusterConfig();
 
                     if (Utilities.stringIsNullOrEmpty(textareaQuery.getText())) {
                         throw new RuntimeException("Query must be provided");
@@ -207,7 +213,7 @@ public class CouchbaseUI {
                     updateStatusTextProcessing();
 
                     String query = trimString(textareaQuery.getText());
-                    QueryResult result = couchbase.getCluster(clusterConfig).query(query);
+                    QueryResult result = couchbase.getCluster(clusterConnection).query(query);
                     result.metaData();
 
                     // Get the results as pretty-printed content
@@ -216,6 +222,8 @@ public class CouchbaseUI {
 
                     textareaQueryResponse.setText(prettyJson);
 
+                    config.upsertServer(clusterConnection, query);
+
                     updateStatusText("Query complete.");
 
                 } catch (Exception e) {
@@ -223,28 +231,146 @@ public class CouchbaseUI {
                 }
             }
         });
+
+        comboClusterPicker.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateClusterUsers();
+            }
+        });
+
+        comboboxUser.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updatePassword();
+                updateBuckets();
+            }
+        });
+
+        comboBucketName.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateBucketCollections();
+            }
+        });
     }
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("CouchbaseUI");
-        frame.setContentPane(new CouchbaseUI().panel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.pack();
-        frame.setVisible(true);
+    protected void updateClusterUsers() {
+        comboboxUser.removeAllItems();
+
+        String host = getSelectedText(comboClusterPicker);
+        ClusterConfig clusterConfig = config.getClusterConfig(host);
+        clusterConfig.getUsers().stream().forEach(user -> comboboxUser.addItem(user));
     }
 
-    protected ClusterConfig createClusterConfig() {
-        return new ClusterConfig(getSelectedText(comboClusterPicker),
+    protected void updatePassword() {
+        String host = getSelectedText(comboClusterPicker);
+        ClusterConfig clusterConfig = config.getClusterConfig(host);
+
+        UserConfig userConfig = clusterConfig.getUserConfig(getSelectedText(comboboxUser));
+
+        if (userConfig != null) {
+            password.setText(userConfig.getPassword());
+        }
+    }
+
+    protected void updateBuckets() {
+        comboBucketName.removeAllItems();
+
+        String host = getSelectedText(comboClusterPicker);
+        ClusterConfig clusterConfig = config.getClusterConfig(host);
+        UserConfig userConfig = clusterConfig.getUserConfig(getSelectedText(comboboxUser));
+
+        if (userConfig != null) {
+            userConfig.getBuckets().stream().forEach(bucket -> comboBucketName.addItem(bucket));
+        }
+    }
+
+    protected void updateBucketCollections() {
+        comboboxCollection.removeAllItems();
+
+        String host = getSelectedText(comboClusterPicker);
+        ClusterConfig clusterConfig = config.getClusterConfig(host);
+        UserConfig userConfig = clusterConfig.getUserConfig(getSelectedText(comboboxUser));
+
+        if (userConfig != null) {
+            List<String> collections = userConfig.getBucketCollections(getSelectedText(comboBucketName));
+            collections.stream().forEach(collection -> comboboxCollection.addItem(collection));
+        }
+    }
+
+
+    protected void loadConfig() {
+        // Load the configuration
+        try {
+            config = ConfigFileManager.LoadConfig();
+
+            // populate the combo box with cluster info (only)
+            List<String> hostnames = config.getServerHostnames();
+            hostnames.stream().forEach(hostname -> comboClusterPicker.addItem(hostname));
+        } catch (Exception e) {
+            updateStatusText(e);
+            config = ConfigFileManager.CreateEmptyConfig();
+        }
+
+        // TODO: this causes problems
+//        // Ensure nothing is selected by default
+
+//        try {
+//            comboClusterPicker.setSelectedItem("");
+//        } catch (Exception e) {
+//            // ignore
+//        }
+    }
+
+    protected void saveConfig() {
+        try {
+            updateStatusText("Saving configuration...");
+            ConfigFileManager.SaveConfig(config);
+        } catch (Exception e) {
+            updateStatusText(e);
+        }
+    }
+
+    protected ClusterConnection createClusterConfig() {
+        return new ClusterConnection(getSelectedText(comboClusterPicker),
                 getSelectedText(comboboxUser), new String(password.getPassword()));
     }
 
     protected Collection getBucketCollection() throws IOException, JSONException {
         updateStatusText("Getting Couchbase...");
 
-        ClusterConfig clusterConfig = createClusterConfig();
+        ClusterConnection clusterConnection = createClusterConfig();
         BucketCollection bucketCollection = createBucketCollection();
 
-        return couchbase.getBucketCollection(clusterConfig, bucketCollection);
+        Collection collection = couchbase.getBucketCollection(clusterConnection, bucketCollection);
+
+        // We did something successful, update the config
+        config.upsertServer(clusterConnection, bucketCollection);
+
+        // Ensure all the fields are populated in the UI dropdowns (inverse order is important)
+        ensureComboboxContains(comboboxCollection, bucketCollection.getCollectionName());
+        ensureComboboxContains(comboBucketName, bucketCollection.getBucketName());
+        ensureComboboxContains(comboboxUser, clusterConnection.getUser());
+        ensureComboboxContains(comboClusterPicker, clusterConnection.getHost());
+
+        return collection;
+    }
+
+    private void ensureComboboxContains(JComboBox comboBox, String newItem) {
+        // Don't add empty values to dropdowns
+        if (newItem == null || newItem.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < comboBox.getItemCount(); i++ ) {
+            if (comboBox.getItemAt(i).equals(newItem)) {
+                return;
+            }
+        }
+
+        comboBox.addItem(newItem);
+        comboBox.setSelectedItem(newItem);
     }
 
     protected BucketCollection createBucketCollection() {
@@ -252,7 +378,7 @@ public class CouchbaseUI {
     }
 
     protected String getSelectedText(JComboBox combobox) {
-        return  (combobox.getSelectedItem() != null) ? combobox.getSelectedItem().toString() : "";
+        return (combobox.getSelectedItem() != null) ? combobox.getSelectedItem().toString().trim() : "";
     }
 
     protected void updateStatusTextProcessing() {
@@ -264,7 +390,11 @@ public class CouchbaseUI {
     }
 
     protected void updateStatusText(Exception exception) {
-        updateStatusText(Color.WHITE, DARK_RED, exception.getMessage());
+        if (exception instanceof DocumentNotFoundException) {
+            updateStatusText(Color.BLACK, Color.YELLOW, exception.getMessage());
+        } else {
+            updateStatusText(Color.WHITE, DARK_RED, exception.getMessage());
+        }
     }
 
     private void updateStatusText(Color disabledTextColor, Color background, String message) {
@@ -274,5 +404,26 @@ public class CouchbaseUI {
         textStatus.setToolTipText(message);
         textStatus.setCaretPosition(0);
         textStatus.update(textStatus.getGraphics());
+    }
+
+    public static void main(String[] args) {
+        CouchbaseUI couchbaseUI = new CouchbaseUI();
+        couchbaseUI.loadConfig();
+
+        JFrame frame = new JFrame("CouchbaseUI");
+        frame.setContentPane(couchbaseUI.panel);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.pack();
+        frame.setVisible(true);
+
+        // Add window listener by implementing WindowAdapter class to
+        // the frame instance. To handle the close event we just need
+        // to implement the windowClosing() method.
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                couchbaseUI.saveConfig();
+            }
+        });
     }
 }

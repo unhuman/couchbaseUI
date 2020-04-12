@@ -6,12 +6,12 @@ import java.util.Objects;
 import static com.unhuman.couchbaseui.utils.Utilities.stringIsNullOrEmpty;
 import static com.unhuman.couchbaseui.utils.Utilities.trimString;
 
-public class ClusterConfig {
+public class ClusterConnection {
     private final String host;
     private final String user;
     private final String password;
 
-    public ClusterConfig(String host, String user, String password) {
+    public ClusterConnection(String host, String user, String password) {
         this.host = trimString(host);
         this.user = trimString(user);
         this.password = trimString(password);
@@ -50,7 +50,7 @@ public class ClusterConfig {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ClusterConfig that = (ClusterConfig) o;
+        ClusterConnection that = (ClusterConnection) o;
         return host.equals(that.host) &&
                 user.equals(that.user) &&
                 password.equals(that.password);
