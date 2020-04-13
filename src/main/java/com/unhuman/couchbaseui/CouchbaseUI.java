@@ -147,6 +147,7 @@ public class CouchbaseUI {
 
                     updateStatusText("Fetch complete.");
                 } catch (Exception e) {
+                    textareaValue.setText("");
                     updateStatusText(e);
                 }
             }
@@ -168,8 +169,12 @@ public class CouchbaseUI {
                             .cas(current_cas);
                     collection.remove(documentKey, removeOptions);
 
+                    textareaValue.setText("");
+
                     updateStatusText("Delete complete.");
                 } catch (DocumentNotFoundException dnfe) {
+                    textareaValue.setText("");
+
                     updateStatusText(dnfe);
                 } catch (Exception e) {
                     updateStatusText(e);
@@ -200,7 +205,7 @@ public class CouchbaseUI {
 
                     JsonNode convertedObject = JacksonTransformers.MAPPER. readTree(textareaValue.getText());
 
-                    MutationResult result = collection.replace(documentKey, convertedObject);
+                    MutationResult result = collection.replace(documentKey, convertedObject, replaceOptions);
                     current_cas = result.cas();
 
                     updateStatusText("Update complete.");
