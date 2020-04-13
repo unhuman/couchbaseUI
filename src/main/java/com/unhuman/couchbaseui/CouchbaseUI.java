@@ -9,10 +9,7 @@ import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.kv.GetResult;
-import com.couchbase.client.java.kv.MutationResult;
-import com.couchbase.client.java.kv.RemoveOptions;
-import com.couchbase.client.java.kv.ReplaceOptions;
+import com.couchbase.client.java.kv.*;
 import com.couchbase.client.java.query.QueryResult;
 import com.unhuman.couchbaseui.config.ClusterConfig;
 import com.unhuman.couchbaseui.config.ConfigFileManager;
@@ -28,12 +25,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static com.unhuman.couchbaseui.utils.Utilities.trimString;
 
 public class CouchbaseUI {
     private static final Color DARK_RED = new Color(128, 0, 0);
+    private static final String NO_EXPIRY_STRING = "No Expiry";
 
     private final CouchbaseClientManager couchbase;
     private final ObjectWriter prettyPrintingWriter;
@@ -72,11 +72,16 @@ public class CouchbaseUI {
     private JLabel labelQueryIndicator;
     private JButton buttonAbout;
     private JButton buttonDeleteQuery;
+    private JComboBox comboBoxTTLDurationType;
+    private JTextField textFieldTTLAmount;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
 
-    private long current_cas = -1L;
+    private long currentCAS = -1L;
+
+    // TODO: Fix expiry tracking
+    // private Duration currentExpiry;
 
     public CouchbaseUI() {
         // Set the global mapper to pretty print
@@ -92,6 +97,13 @@ public class CouchbaseUI {
         couchbase = new CouchbaseClientManager();
 
         currentQuery = 1;
+
+        comboBoxTTLDurationType.addItem(ChronoUnit.SECONDS);
+        comboBoxTTLDurationType.addItem(ChronoUnit.MINUTES);
+        comboBoxTTLDurationType.addItem(ChronoUnit.HOURS);
+        comboBoxTTLDurationType.addItem(ChronoUnit.DAYS);
+        comboBoxTTLDurationType.addItem(ChronoUnit.YEARS);
+        comboBoxTTLDurationType.addItem(NO_EXPIRY_STRING);
 
         /** Set up all the listeners */
 
@@ -112,10 +124,14 @@ public class CouchbaseUI {
                     updateStatusTextProcessing();
 
                     String documentKey = trimString(textfieldDocumentKey.getText());
-                    // TODO: add TTL
                     JsonNode convertedObject = JacksonTransformers.MAPPER. readTree(textareaValue.getText());
-                    MutationResult result = collection.insert(documentKey, convertedObject);
-                    current_cas = result.cas();
+                    Duration expiryDuration = calculateExpiry();
+                    InsertOptions insertOptions = InsertOptions.insertOptions().expiry(expiryDuration);
+                    MutationResult result = collection.insert(documentKey, convertedObject, insertOptions);
+                    currentCAS = result.cas();
+
+                    // TODO: set currentExpiry
+                    // currentExpiry = ttlDuration;
 
                     updateStatusText("Create complete.");
                 } catch (Exception e) {
@@ -143,40 +159,14 @@ public class CouchbaseUI {
                     String prettyJson = prettyPrintingWriter.writeValueAsString(resultContent);
 
                     textareaValue.setText(prettyJson);
-                    current_cas = result.cas();
+                    currentCAS = result.cas();
+
+                    // TODO: set currentExpiry (this fails for now)
+                    // currentExpiry = result.expiry().get();
 
                     updateStatusText("Fetch complete.");
                 } catch (Exception e) {
                     textareaValue.setText("");
-                    updateStatusText(e);
-                }
-            }
-        });
-        // Setup KV Delete Document button
-        deleteButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                try {
-                    Collection collection = getBucketCollection();
-
-                    if (Utilities.stringIsNullOrEmpty(textfieldDocumentKey.getText())) {
-                        throw new RuntimeException("Key must be provided");
-                    }
-
-                    updateStatusTextProcessing();
-
-                    String documentKey = trimString(textfieldDocumentKey.getText());
-                    RemoveOptions removeOptions = RemoveOptions.removeOptions()
-                            .cas(current_cas);
-                    collection.remove(documentKey, removeOptions);
-
-                    textareaValue.setText("");
-
-                    updateStatusText("Delete complete.");
-                } catch (DocumentNotFoundException dnfe) {
-                    textareaValue.setText("");
-
-                    updateStatusText(dnfe);
-                } catch (Exception e) {
                     updateStatusText(e);
                 }
             }
@@ -199,16 +189,49 @@ public class CouchbaseUI {
                     updateStatusTextProcessing();
 
                     String documentKey = trimString(textfieldDocumentKey.getText());
-                    // TODO: add TTL
+
+                    // TODO: Right now, we always use the TTL provided
+                    Duration expiry = calculateExpiry();
                     ReplaceOptions replaceOptions = ReplaceOptions.replaceOptions()
-                            .cas(current_cas);
+                            .cas(currentCAS)
+                            .expiry(expiry);
 
                     JsonNode convertedObject = JacksonTransformers.MAPPER. readTree(textareaValue.getText());
 
                     MutationResult result = collection.replace(documentKey, convertedObject, replaceOptions);
-                    current_cas = result.cas();
+                    currentCAS = result.cas();
 
                     updateStatusText("Update complete.");
+                } catch (Exception e) {
+                    updateStatusText(e);
+                }
+            }
+        });
+
+        // Setup KV Delete Document button
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                try {
+                    Collection collection = getBucketCollection();
+
+                    if (Utilities.stringIsNullOrEmpty(textfieldDocumentKey.getText())) {
+                        throw new RuntimeException("Key must be provided");
+                    }
+
+                    updateStatusTextProcessing();
+
+                    String documentKey = trimString(textfieldDocumentKey.getText());
+                    RemoveOptions removeOptions = RemoveOptions.removeOptions()
+                            .cas(currentCAS);
+                    collection.remove(documentKey, removeOptions);
+
+                    textareaValue.setText("");
+
+                    updateStatusText("Delete complete.");
+                } catch (DocumentNotFoundException dnfe) {
+                    textareaValue.setText("");
+
+                    updateStatusText(dnfe);
                 } catch (Exception e) {
                     updateStatusText(e);
                 }
@@ -337,6 +360,11 @@ public class CouchbaseUI {
             List<String> collections = userConfig.getBucketCollections(getSelectedText(comboBucketName));
             collections.stream().forEach(collection -> comboboxCollection.addItem(collection));
         }
+
+        // wipe out any data in the k/v tab
+        textfieldDocumentKey.setText("");
+        textfieldMetadata.setText("");
+        textareaValue.setText("");
     }
 
     protected void updateQueries() {
@@ -516,6 +544,28 @@ public class CouchbaseUI {
         textStatus.setToolTipText(message);
         textStatus.setCaretPosition(0);
         textStatus.update(textStatus.getGraphics());
+    }
+
+    private Duration calculateExpiry() {
+        long expiryNumeric;
+        try {
+            expiryNumeric = Long.parseLong(textFieldTTLAmount.getText().trim());
+        } catch (Exception e) {
+            throw new RuntimeException("Problem parsing TTL.");
+        }
+        if (comboBoxTTLDurationType.getSelectedItem() instanceof ChronoUnit) {
+            if (expiryNumeric <= 0) {
+                throw new RuntimeException("Provided TTL must be positive value with time period.");
+            }
+            return Duration.of(expiryNumeric, (ChronoUnit) comboBoxTTLDurationType.getSelectedItem());
+        } else if (comboBoxTTLDurationType.getSelectedItem().equals(NO_EXPIRY_STRING)) {
+            if (expiryNumeric != 0) {
+                throw new RuntimeException("Provided TTL must be 0 when provided with " + NO_EXPIRY_STRING + ".");
+            }
+            return Duration.ZERO;
+        } else {
+            throw new RuntimeException("Unexpected TTL Type: " + comboBoxTTLDurationType.getSelectedItem());
+        }
     }
 
     public static void main(String[] args) {
