@@ -70,6 +70,7 @@ public class CouchbaseUI {
     private JButton buttonPrevQuery;
     private JButton buttonNextQuery;
     private JLabel labelQueryIndicator;
+    private JButton buttonAbout;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
@@ -280,6 +281,12 @@ public class CouchbaseUI {
             public void actionPerformed(ActionEvent e) {
                 currentQuery++;
                 displayCurrentQuery();
+            }
+        });
+        buttonAbout.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                AboutDialog.display(panel);
             }
         });
     }
