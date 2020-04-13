@@ -71,6 +71,7 @@ public class CouchbaseUI {
     private JButton buttonNextQuery;
     private JLabel labelQueryIndicator;
     private JButton buttonAbout;
+    private JButton buttonDeleteQuery;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
@@ -289,6 +290,12 @@ public class CouchbaseUI {
                 AboutDialog.display(panel);
             }
         });
+        buttonDeleteQuery.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteCurrentQuery();
+            }
+        });
     }
 
     protected void updateClusterUsers() {
@@ -336,6 +343,22 @@ public class CouchbaseUI {
         displayCurrentQuery();
     }
 
+    protected void deleteCurrentQuery() {
+        UserConfig userConfig = getUserConfig();
+        if (userConfig != null) {
+            List<String> queries = userConfig.getQueries();
+            queries.remove(currentQuery - 1);
+            if (currentQuery > queries.size()) {
+                currentQuery = queries.size();
+                if (currentQuery == 0) {
+                    currentQuery = 1;
+                }
+            }
+            displayCurrentQuery();
+        }
+    }
+
+
     protected void displayCurrentQuery() {
         UserConfig userConfig = getUserConfig();
         String useQuery = "";
@@ -365,6 +388,9 @@ public class CouchbaseUI {
         labelQueryIndicator.setText(String.format("%d/%d", currentQuery, maxQuery));
         buttonPrevQuery.setEnabled(currentQuery > 1);
         buttonNextQuery.setEnabled(currentQuery < maxQuery);
+        buttonDeleteQuery.setEnabled(buttonPrevQuery.isEnabled()
+                || buttonNextQuery.isEnabled()
+                || !textareaQuery.getText().trim().isEmpty());
     }
 
     protected void loadConfig() {
