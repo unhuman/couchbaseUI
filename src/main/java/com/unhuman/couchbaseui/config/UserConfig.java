@@ -79,6 +79,10 @@ public class UserConfig extends ConfigItem {
         return buckets;
     }
 
+    public List<String> getQueries() {
+        return queries;
+    }
+
     public List<String> getBucketCollections(String bucket) {
         List<String> collections = new ArrayList<>();
 

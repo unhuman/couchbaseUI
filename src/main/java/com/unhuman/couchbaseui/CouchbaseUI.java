@@ -38,7 +38,9 @@ public class CouchbaseUI {
     private final CouchbaseClientManager couchbase;
     private final ObjectWriter prettyPrintingWriter;
     private CouchbaseUIConfig config;
+    private int currentQuery;
 
+    // UI created by IntelliJ
     private JPanel panel;
     private JComboBox comboClusterPicker;
     private JTabbedPane tabPanelOperations;
@@ -65,6 +67,9 @@ public class CouchbaseUI {
     private JTextArea textareaQuery;
     private JButton buttonQuery;
     private JComboBox comboboxCollection;
+    private JButton buttonPrevQuery;
+    private JButton buttonNextQuery;
+    private JLabel labelQueryIndicator;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
@@ -78,10 +83,13 @@ public class CouchbaseUI {
         prettyPrinter.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
         prettyPrintingWriter = JacksonTransformers.MAPPER.writer(prettyPrinter);
 
+        // Backup current colors for status so it can be restored.
         textStatusDisabledTextColor = textStatus.getDisabledTextColor();
         textStatusBgColor = textStatus.getBackground();
 
         couchbase = new CouchbaseClientManager();
+
+        currentQuery = 1;
 
         /** Set up all the listeners */
 
@@ -222,7 +230,13 @@ public class CouchbaseUI {
 
                     textareaQueryResponse.setText(prettyJson);
 
+                    List<String> queries = getUserConfig().getQueries();
                     config.upsertServer(clusterConnection, query);
+
+                    // Find the query we just ran and indicate it to be the current one
+                    for (currentQuery = queries.size(); !queries.get(currentQuery - 1).equals(query); currentQuery--);
+
+                    updateQueryStatus();
 
                     updateStatusText("Query complete.");
 
@@ -244,6 +258,7 @@ public class CouchbaseUI {
             public void actionPerformed(ActionEvent e) {
                 updatePassword();
                 updateBuckets();
+                updateQueries();
             }
         });
 
@@ -253,22 +268,33 @@ public class CouchbaseUI {
                 updateBucketCollections();
             }
         });
+        buttonPrevQuery.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentQuery--;
+                displayCurrentQuery();
+            }
+        });
+        buttonNextQuery.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentQuery++;
+                displayCurrentQuery();
+            }
+        });
     }
 
     protected void updateClusterUsers() {
         comboboxUser.removeAllItems();
 
-        String host = getSelectedText(comboClusterPicker);
-        ClusterConfig clusterConfig = config.getClusterConfig(host);
-        clusterConfig.getUsers().stream().forEach(user -> comboboxUser.addItem(user));
+        ClusterConfig clusterConfig = getClusterConfig();
+        if (clusterConfig != null) {
+            clusterConfig.getUsers().stream().forEach(user -> comboboxUser.addItem(user));
+        }
     }
 
     protected void updatePassword() {
-        String host = getSelectedText(comboClusterPicker);
-        ClusterConfig clusterConfig = config.getClusterConfig(host);
-
-        UserConfig userConfig = clusterConfig.getUserConfig(getSelectedText(comboboxUser));
-
+        UserConfig userConfig = getUserConfig();
         if (userConfig != null) {
             password.setText(userConfig.getPassword());
         }
@@ -277,9 +303,7 @@ public class CouchbaseUI {
     protected void updateBuckets() {
         comboBucketName.removeAllItems();
 
-        String host = getSelectedText(comboClusterPicker);
-        ClusterConfig clusterConfig = config.getClusterConfig(host);
-        UserConfig userConfig = clusterConfig.getUserConfig(getSelectedText(comboboxUser));
+        UserConfig userConfig = getUserConfig();
 
         if (userConfig != null) {
             userConfig.getBuckets().stream().forEach(bucket -> comboBucketName.addItem(bucket));
@@ -289,16 +313,52 @@ public class CouchbaseUI {
     protected void updateBucketCollections() {
         comboboxCollection.removeAllItems();
 
-        String host = getSelectedText(comboClusterPicker);
-        ClusterConfig clusterConfig = config.getClusterConfig(host);
-        UserConfig userConfig = clusterConfig.getUserConfig(getSelectedText(comboboxUser));
-
+        UserConfig userConfig = getUserConfig();
         if (userConfig != null) {
             List<String> collections = userConfig.getBucketCollections(getSelectedText(comboBucketName));
             collections.stream().forEach(collection -> comboboxCollection.addItem(collection));
         }
     }
 
+    protected void updateQueries() {
+        UserConfig userConfig = getUserConfig();
+        if (userConfig != null) {
+            List<String> queries = userConfig.getQueries();
+            currentQuery = queries.size();
+        }
+        displayCurrentQuery();
+    }
+
+    protected void displayCurrentQuery() {
+        UserConfig userConfig = getUserConfig();
+        String useQuery = "";
+        if (userConfig != null) {
+            List<String> queries = userConfig.getQueries();
+            useQuery = (queries.size() > 0) ? queries.get(currentQuery - 1) : "";
+        }
+
+        textareaQuery.setText(useQuery);
+        currentQuery = useQuery.isEmpty() ? 1 : currentQuery;
+
+        textareaQueryResponse.setText("");
+
+        updateQueryStatus();
+    }
+
+    protected void updateQueryStatus() {
+        UserConfig userConfig = getUserConfig();
+        int maxQuery = 1;
+        if (userConfig != null) {
+            List<String> queries = userConfig.getQueries();
+            maxQuery = Math.max(1, queries.size());
+        } else {
+            textareaQuery.setText("");
+        }
+
+        labelQueryIndicator.setText(String.format("%d/%d", currentQuery, maxQuery));
+        buttonPrevQuery.setEnabled(currentQuery > 1);
+        buttonNextQuery.setEnabled(currentQuery < maxQuery);
+    }
 
     protected void loadConfig() {
         // Load the configuration
@@ -314,8 +374,7 @@ public class CouchbaseUI {
         }
 
         // TODO: this causes problems
-//        // Ensure nothing is selected by default
-
+//        // Set nothing selected by default
 //        try {
 //            comboClusterPicker.setSelectedItem("");
 //        } catch (Exception e) {
@@ -397,6 +456,21 @@ public class CouchbaseUI {
         }
     }
 
+    protected ClusterConfig getClusterConfig() {
+        String host = getSelectedText(comboClusterPicker);
+        ClusterConfig clusterConfig = config.getClusterConfig(host);
+        return clusterConfig;
+    }
+
+
+    protected UserConfig getUserConfig() {
+        ClusterConfig clusterConfig = getClusterConfig();
+        UserConfig userConfig = (clusterConfig != null)
+                ? clusterConfig.getUserConfig(getSelectedText(comboboxUser))
+                : null;
+        return userConfig;
+    }
+
     private void updateStatusText(Color disabledTextColor, Color background, String message) {
         textStatus.setDisabledTextColor(disabledTextColor);
         textStatus.setBackground(background);
@@ -414,7 +488,6 @@ public class CouchbaseUI {
         frame.setContentPane(couchbaseUI.panel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
-        frame.setVisible(true);
 
         // Add window listener by implementing WindowAdapter class to
         // the frame instance. To handle the close event we just need
@@ -425,5 +498,7 @@ public class CouchbaseUI {
                 couchbaseUI.saveConfig();
             }
         });
+
+        frame.setVisible(true);
     }
 }

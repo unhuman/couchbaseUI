@@ -44,7 +44,7 @@ public class CouchbaseUIConfig {
      * upserts (add or update) a server
      * @param clusterConnection
      * @param bucketCollection
-     * @return true if added or updated, false or already exists as-is
+     * @return
      */
     public void upsertServer(ClusterConnection clusterConnection, BucketCollection bucketCollection) {
         if (!this.servers.containsKey(clusterConnection.getHost())) {
@@ -68,7 +68,7 @@ public class CouchbaseUIConfig {
      * upserts (add or update) a server
      * @param clusterConnection
      * @param query
-     * @return true if added or updated, false or already exists as-is
+     * @return
      */
     public void upsertServer(ClusterConnection clusterConnection, String query) {
         if (!this.servers.containsKey(clusterConnection.getHost())) {
