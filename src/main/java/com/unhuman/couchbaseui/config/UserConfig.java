@@ -4,10 +4,7 @@ import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonAutoD
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @JsonSerialize
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -75,7 +72,7 @@ public class UserConfig extends ConfigItem {
     @JsonIgnore
     public List<String> getBuckets() {
         List<String> buckets = new ArrayList<>(bucketsCollections.keySet());
-        buckets.sort(String::compareTo);
+        Collections.sort(buckets);
         return buckets;
     }
 
@@ -91,7 +88,7 @@ public class UserConfig extends ConfigItem {
             collections.addAll(bucketsCollections.get(bucket));
         }
 
-        collections.sort(String::compareTo);
+        Collections.sort(collections);
         return collections;
     }
 }

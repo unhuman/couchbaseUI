@@ -13,12 +13,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <!-- Newer versions of Java have problems shading IntelliJ UI Designer -->
                     <source>8</source>
                     <target>8</target>
                 </configuration>
             </plugin>
 
-            <!-- needed to be able to shade intelliJ UI Designer -->
+            <!-- needed to be able to shade IntelliJ UI Designer -->
+            <!-- Note: This causes problems with lambda expressions, don't use them -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>ideauidesigner-maven-plugin</artifactId>

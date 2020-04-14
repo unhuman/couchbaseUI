@@ -6,10 +6,7 @@ import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.annotation.
 import com.unhuman.couchbaseui.entities.BucketCollection;
 import com.unhuman.couchbaseui.entities.ClusterConnection;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @JsonSerialize
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -32,7 +29,7 @@ public class CouchbaseUIConfig {
     @JsonIgnore
     public List<String> getServerHostnames() {
         List<String> hostnames = new ArrayList<>(servers.keySet());
-        hostnames.sort(String::compareTo);
+        Collections.sort(hostnames);
         return hostnames;
     }
 

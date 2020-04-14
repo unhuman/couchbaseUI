@@ -331,7 +331,9 @@ public class CouchbaseUI {
 
         ClusterConfig clusterConfig = getClusterConfig();
         if (clusterConfig != null) {
-            clusterConfig.getUsers().stream().forEach(user -> comboboxUser.addItem(user));
+            for (String user: clusterConfig.getUsers()) {
+                comboboxUser.addItem(user);
+            }
         }
     }
 
@@ -348,7 +350,9 @@ public class CouchbaseUI {
         UserConfig userConfig = getUserConfig();
 
         if (userConfig != null) {
-            userConfig.getBuckets().stream().forEach(bucket -> comboBucketName.addItem(bucket));
+            for (String bucket: userConfig.getBuckets()) {
+                comboBucketName.addItem(bucket);
+            }
         }
     }
 
@@ -358,7 +362,9 @@ public class CouchbaseUI {
         UserConfig userConfig = getUserConfig();
         if (userConfig != null) {
             List<String> collections = userConfig.getBucketCollections(getSelectedText(comboBucketName));
-            collections.stream().forEach(collection -> comboboxCollection.addItem(collection));
+            for (String collection: collections) {
+                comboboxCollection.addItem(collection);
+            }
         }
 
         // wipe out any data in the k/v tab
@@ -433,7 +439,9 @@ public class CouchbaseUI {
 
             // populate the combo box with cluster info (only)
             List<String> hostnames = config.getServerHostnames();
-            hostnames.stream().forEach(hostname -> comboClusterPicker.addItem(hostname));
+            for (String hostname: hostnames) {
+                comboClusterPicker.addItem(hostname);
+            }
         } catch (Exception e) {
             updateStatusText(e);
             config = ConfigFileManager.CreateEmptyConfig();
