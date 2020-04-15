@@ -1,6 +1,7 @@
 package com.unhuman.couchbaseui;
 
 import com.unhuman.couchbaseui.config.CouchbaseUIConfig;
+import com.unhuman.couchbaseui.config.N1QLQueryRefreshHandling;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,6 +15,7 @@ public class SettingsDialog extends JDialog {
     private JButton buttonCancel;
     private JPasswordField passwordSecretKey;
     private JPasswordField passwordSecretMatch;
+    private JComboBox comboBoxDuplicateHandling;
 
     public SettingsDialog(CouchbaseUIConfig configuration) {
         setContentPane(contentPane);
@@ -24,6 +26,11 @@ public class SettingsDialog extends JDialog {
             passwordSecretKey.setText(configuration.getSecret());
             passwordSecretMatch.setText(configuration.getSecret());
         }
+
+        for (N1QLQueryRefreshHandling n1QLQueryRefreshHandling: N1QLQueryRefreshHandling.values()) {
+            comboBoxDuplicateHandling.addItem(n1QLQueryRefreshHandling);
+        }
+        comboBoxDuplicateHandling.setSelectedItem(configuration.getN1QLQueryRefreshHandling());
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -45,6 +52,8 @@ public class SettingsDialog extends JDialog {
                 }
 
                 configuration.setSecret(key);
+                configuration.setN1QLQueryRefreshHandling(
+                        (N1QLQueryRefreshHandling) comboBoxDuplicateHandling.getSelectedItem());
 
                 onOK();
             }

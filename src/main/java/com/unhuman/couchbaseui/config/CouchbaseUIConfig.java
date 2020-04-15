@@ -16,6 +16,8 @@ public class CouchbaseUIConfig {
 
     private Map<String, ClusterConfig> servers;
 
+    private N1QLQueryRefreshHandling n1QLQueryRefreshHandling = N1QLQueryRefreshHandling.InPlace;
+
     private CouchbaseUIConfig() { } // for deserialization
 
     private CouchbaseUIConfig(Map<String, ClusterConfig> servers) {
@@ -87,7 +89,7 @@ public class CouchbaseUIConfig {
     public void upsertServer(ClusterConnection clusterConnection, String query) {
         if (!this.servers.containsKey(clusterConnection.getHost())) {
             UserConfig userConfig = new UserConfig();
-            userConfig.upsertQuery(query);
+            userConfig.upsertQuery(n1QLQueryRefreshHandling, query);
 
             ClusterConfig clusterConfig = new ClusterConfig();
             clusterConfig.upsertConfigServer(clusterConnection.getUser(), userConfig);
@@ -96,8 +98,16 @@ public class CouchbaseUIConfig {
         } else {
             ClusterConfig clusterConfig = this.servers.get(clusterConnection.getHost());
             UserConfig userConfig = clusterConfig.getUserConfig(clusterConnection.getUser());
-            userConfig.upsertQuery(query);
+            userConfig.upsertQuery(n1QLQueryRefreshHandling, query);
         }
+    }
+
+    public N1QLQueryRefreshHandling getN1QLQueryRefreshHandling() {
+        return n1QLQueryRefreshHandling;
+    }
+
+    public void setN1QLQueryRefreshHandling(N1QLQueryRefreshHandling n1QLQueryRefreshHandling) {
+        this.n1QLQueryRefreshHandling = n1QLQueryRefreshHandling;
     }
 }
 

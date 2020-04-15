@@ -64,11 +64,21 @@ public class UserConfig extends EncryptedConfigItem {
      * @param query
      * @return
      */
-    public void upsertQuery(String query) {
+    public void upsertQuery(N1QLQueryRefreshHandling n1QLQueryRefreshHandling, String query) {
         query = query.trim();
 
-        if (!queries.contains(query)) {
-            queries.add(query);
+        switch (n1QLQueryRefreshHandling) {
+            case InPlace:
+                if (!queries.contains(query)) {
+                    queries.add(query);
+                }
+                break;
+            case MakeLatest:
+                queries.remove(query);
+                queries.add(query);
+                break;
+            default:
+                throw new RuntimeException("Unknown query handling: " + n1QLQueryRefreshHandling);
         }
     }
 
