@@ -29,6 +29,7 @@ public class AboutDialog extends JDialog {
     public static void display(Component component) {
         AboutDialog dialog = new AboutDialog();
         dialog.setTitle("About CouchbaseUI");
+        dialog.setResizable(false);
         dialog.pack();
         dialog.setLocationRelativeTo(component);
         dialog.setVisible(true);

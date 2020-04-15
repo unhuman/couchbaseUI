@@ -6,6 +6,7 @@
       <xy x="48" y="54" width="498" height="297"/>
     </constraints>
     <properties>
+      <maximumSize width="2147483647" height="2147483647"/>
       <name value=""/>
     </properties>
     <border type="none"/>

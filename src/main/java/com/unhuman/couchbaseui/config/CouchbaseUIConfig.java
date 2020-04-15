@@ -1,8 +1,8 @@
 package com.unhuman.couchbaseui.config;
 
-import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.unhuman.couchbaseui.entities.BucketCollection;
 import com.unhuman.couchbaseui.entities.ClusterConnection;
 
@@ -11,6 +11,9 @@ import java.util.*;
 @JsonSerialize
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class CouchbaseUIConfig {
+    @JsonIgnore
+    private String secret;
+
     private Map<String, ClusterConfig> servers;
 
     private CouchbaseUIConfig() { } // for deserialization
@@ -25,6 +28,20 @@ public class CouchbaseUIConfig {
     static CouchbaseUIConfig CreateConfigFile(Map<String, ClusterConfig> servers) {
         return new CouchbaseUIConfig(servers);
     }
+
+    public boolean hasSecret() {
+        return secret != null;
+    }
+
+    @JsonIgnore
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = (secret != null && secret.trim().length() > 0) ? secret.trim() : null;
+    }
+
 
     @JsonIgnore
     public List<String> getServerHostnames() {

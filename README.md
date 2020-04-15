@@ -7,3 +7,7 @@ the IntelliJ SwingUI designer, which doesn't seem to have support
 for Java 11.  I really have no idea why Lambdas don't work, but 
 I found a comment on the internet and removing them resolved the
 issues.
+
+The following were used in the creation of this project:
+
+https://github.com/codesqueak/jackson-json-crypto

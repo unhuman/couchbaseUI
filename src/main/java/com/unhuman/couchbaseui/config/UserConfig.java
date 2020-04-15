@@ -1,19 +1,19 @@
 package com.unhuman.couchbaseui.config;
 
-import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.codingrodent.jackson.crypto.Encrypt;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.util.*;
 
 @JsonSerialize
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-public class UserConfig extends ConfigItem {
+public class UserConfig extends EncryptedConfigItem {
     private Map<String, List<String>> bucketsCollections;
     private List<String> queries;
 
-    // Do not allow password to serialize, but we retain it during a session
-    @JsonIgnore
+    @Encrypt
     private String password;
 
     UserConfig() {
@@ -23,12 +23,18 @@ public class UserConfig extends ConfigItem {
         password = "";
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPassword(Object password) {
+        // ignore non-string values (failed decryption)
+        if (password instanceof String) {
+            this.password = (String) password;
+        } else if (!GetPermitLossOfEncryptedValues()) {
+            throw new PasswordDecryptionException("Can't deserialize encrypted value");
+        }
     }
 
+    @Encrypt
     public String getPassword() {
-        return this.password != null ? password : "";
+        return (GetPermitLossOfEncryptedValues() || this.password == null) ? "" : password;
     }
 
     /**
@@ -45,12 +51,10 @@ public class UserConfig extends ConfigItem {
             List<String> collections = new ArrayList<>();
             collections.add(collection);
             bucketsCollections.put(bucket, collections);
-            setDirty();
         } else {
             List<String> collections = bucketsCollections.get(bucket);
             if (!collections.contains(collection)) {
                 collections.add(collection);
-                setDirty();
             }
         }
     }
@@ -65,7 +69,6 @@ public class UserConfig extends ConfigItem {
 
         if (!queries.contains(query)) {
             queries.add(query);
-            setDirty();
         }
     }
 

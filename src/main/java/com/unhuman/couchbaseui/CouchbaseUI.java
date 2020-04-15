@@ -74,6 +74,7 @@ public class CouchbaseUI {
     private JButton buttonDeleteQuery;
     private JComboBox comboBoxTTLDurationType;
     private JTextField textFieldTTLAmount;
+    private JButton buttonSettings;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
@@ -324,6 +325,12 @@ public class CouchbaseUI {
                 deleteCurrentQuery();
             }
         });
+        buttonSettings.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                SettingsDialog.display(panel, config);
+            }
+        });
     }
 
     protected void updateClusterUsers() {
@@ -433,9 +440,11 @@ public class CouchbaseUI {
     }
 
     protected void loadConfig() {
+        updateStatusText("Loading configuration...");
+
         // Load the configuration
         try {
-            config = ConfigFileManager.LoadConfig();
+            config = ConfigFileManager.LoadConfig(panel);
 
             // populate the combo box with cluster info (only)
             List<String> hostnames = config.getServerHostnames();
@@ -447,13 +456,7 @@ public class CouchbaseUI {
             config = ConfigFileManager.CreateEmptyConfig();
         }
 
-        // TODO: this causes problems
-//        // Set nothing selected by default
-//        try {
-//            comboClusterPicker.setSelectedItem("");
-//        } catch (Exception e) {
-//            // ignore
-//        }
+        updateStatusText("");
     }
 
     protected void saveConfig() {
@@ -578,7 +581,6 @@ public class CouchbaseUI {
 
     public static void main(String[] args) {
         CouchbaseUI couchbaseUI = new CouchbaseUI();
-        couchbaseUI.loadConfig();
 
         JFrame frame = new JFrame("CouchbaseUI");
         frame.setContentPane(couchbaseUI.panel);
@@ -596,5 +598,9 @@ public class CouchbaseUI {
         });
 
         frame.setVisible(true);
+
+        frame.setEnabled(false);
+        couchbaseUI.loadConfig();
+        frame.setEnabled(true);
     }
 }

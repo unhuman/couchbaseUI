@@ -98,6 +98,12 @@
             <version>0.3.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.codingrodent</groupId>
+            <artifactId>jackson-json-crypto</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
         <!-- needed to be able to shade intelliJ UI Designer -->
         <dependency>
             <groupId>com.intellij</groupId>
