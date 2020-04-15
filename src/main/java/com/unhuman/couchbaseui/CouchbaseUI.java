@@ -439,11 +439,12 @@ public class CouchbaseUI {
                 || !textareaQuery.getText().trim().isEmpty());
     }
 
-    protected void loadConfig() {
+    protected void loadConfig(JFrame frame) {
         updateStatusText("Loading configuration...");
 
         // Load the configuration
         try {
+            frame.setEnabled(false);
             config = ConfigFileManager.LoadConfig(panel);
 
             // populate the combo box with cluster info (only)
@@ -454,17 +455,22 @@ public class CouchbaseUI {
         } catch (Exception e) {
             updateStatusText(e);
             config = ConfigFileManager.CreateEmptyConfig();
+        } finally {
+            frame.setEnabled(true);
         }
 
         updateStatusText("");
     }
 
-    protected void saveConfig() {
+    protected void saveConfig(JFrame frame) {
         try {
+            frame.setEnabled(false);
             updateStatusText("Saving configuration...");
             ConfigFileManager.SaveConfig(config);
         } catch (Exception e) {
             updateStatusText(e);
+        } finally {
+            frame.setEnabled(true);
         }
     }
 
@@ -593,14 +599,12 @@ public class CouchbaseUI {
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                couchbaseUI.saveConfig();
+                couchbaseUI.saveConfig(frame);
             }
         });
 
         frame.setVisible(true);
 
-        frame.setEnabled(false);
-        couchbaseUI.loadConfig();
-        frame.setEnabled(true);
+        couchbaseUI.loadConfig(frame);
     }
 }

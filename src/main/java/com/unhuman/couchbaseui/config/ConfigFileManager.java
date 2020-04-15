@@ -23,6 +23,11 @@ public class ConfigFileManager {
         return CouchbaseUIConfig.CreateConfigFile(null);
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     public static CouchbaseUIConfig LoadConfig(JPanel parentPanel) throws Exception {
         File file = getConfigFile();
 

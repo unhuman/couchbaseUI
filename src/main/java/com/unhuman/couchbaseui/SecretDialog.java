@@ -12,10 +12,12 @@ public class SecretDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JPasswordField passwordSecretKey;
+    private JCheckBox checkBoxAllowCancel;
 
     private AtomicReference<String> secretKeyContainer;
 
     public SecretDialog(AtomicReference<String> secretKeyContainer) {
+        this.checkBoxAllowCancel.setSelected(false);
         this.secretKeyContainer = secretKeyContainer;
         this.secretKeyContainer.set(null);
 
@@ -64,6 +66,10 @@ public class SecretDialog extends JDialog {
     }
 
     private void onCancel() {
+        // Ensure user has approved cancel
+        if (!checkBoxAllowCancel.isSelected()) {
+            return;
+        }
         secretKeyContainer.set(null);
         dispose();
     }
