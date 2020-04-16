@@ -526,13 +526,20 @@ public class CouchbaseUI {
             return;
         }
 
-        for (int i = 0; i < comboBox.getItemCount(); i++ ) {
-            if (comboBox.getItemAt(i).equals(newItem)) {
+        int insertItemLocation;
+        for (insertItemLocation = 0; insertItemLocation < comboBox.getItemCount(); insertItemLocation++ ) {
+            String item = comboBox.getItemAt(insertItemLocation).toString();
+            int comparison = item.compareTo(newItem);
+            if (comparison == 0) {
                 return;
+            }
+
+            if (comparison > 0) {
+                break;
             }
         }
 
-        comboBox.addItem(newItem);
+        comboBox.insertItemAt(newItem, insertItemLocation);
         comboBox.setSelectedItem(newItem);
     }
 
