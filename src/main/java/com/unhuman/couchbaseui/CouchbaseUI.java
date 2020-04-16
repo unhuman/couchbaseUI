@@ -350,6 +350,7 @@ public class CouchbaseUI {
 
     protected void updateClusterUsers() {
         comboboxUser.removeAllItems();
+        password.setText("");
 
         ClusterConfig clusterConfig = getClusterConfig();
         if (clusterConfig != null) {
