@@ -81,6 +81,9 @@ public class CouchbaseUI {
 
     private long currentCAS = -1L;
 
+    // Flag to indicate the UI is updating itself, so don't process events
+    private boolean isUISelfUpdating = false;
+
     // TODO: Fix expiry tracking
     // private Duration currentExpiry;
 
@@ -280,6 +283,10 @@ public class CouchbaseUI {
         comboClusterPicker.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Don't process when UI is self updating
+                if (isUISelfUpdating) {
+                    return;
+                }
                 updateClusterUsers();
             }
         });
@@ -287,6 +294,10 @@ public class CouchbaseUI {
         comboboxUser.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Don't process when UI is self updating
+                if (isUISelfUpdating) {
+                    return;
+                }
                 updatePassword();
                 updateBuckets();
                 updateQueries();
@@ -296,6 +307,10 @@ public class CouchbaseUI {
         comboBucketName.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Don't process when UI is self updating
+                if (isUISelfUpdating) {
+                    return;
+                }
                 updateBucketCollections();
             }
         });
@@ -490,11 +505,17 @@ public class CouchbaseUI {
         // We did something successful, update the config
         config.upsertServer(clusterConnection, bucketCollection);
 
-        // Ensure all the fields are populated in the UI dropdowns (inverse order is important)
-        ensureComboboxContains(comboboxCollection, bucketCollection.getCollectionName());
-        ensureComboboxContains(comboBucketName, bucketCollection.getBucketName());
-        ensureComboboxContains(comboboxUser, clusterConnection.getUser());
-        ensureComboboxContains(comboClusterPicker, clusterConnection.getHost());
+        try {
+            isUISelfUpdating = true;
+
+            // Ensure all the fields are populated in the UI dropdowns (inverse order is important)
+            ensureComboboxContains(comboboxCollection, bucketCollection.getCollectionName());
+            ensureComboboxContains(comboBucketName, bucketCollection.getBucketName());
+            ensureComboboxContains(comboboxUser, clusterConnection.getUser());
+            ensureComboboxContains(comboClusterPicker, clusterConnection.getHost());
+        } finally {
+            isUISelfUpdating = false;
+        }
 
         return collection;
     }
