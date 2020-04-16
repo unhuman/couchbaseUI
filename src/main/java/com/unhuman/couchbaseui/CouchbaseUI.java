@@ -140,7 +140,7 @@ public class CouchbaseUI {
 
                     updateStatusText("Create complete.");
                 } catch (Exception e) {
-                    updateStatusText(e);
+                    handleBucketCRUDException(e);
                 }
             }
         });
@@ -170,17 +170,8 @@ public class CouchbaseUI {
                     // currentExpiry = result.expiry().get();
 
                     updateStatusText("Fetch complete.");
-                } catch (FeatureNotAvailableException fnae) {
-                    // this is when there are no collections.  Need to clean out that.  Not so elegant, but...
-                    String itemRemove = comboboxCollection.getSelectedItem().toString();
-                    comboboxCollection.removeItem(itemRemove);
-                    getCurrentBucketCollections().remove(itemRemove);
-
-                    textareaValue.setText("");
-                    updateStatusText(fnae);
                 } catch (Exception e) {
-                    textareaValue.setText("");
-                    updateStatusText(e);
+                    handleBucketCRUDException(e);
                 }
             }
         });
@@ -216,7 +207,7 @@ public class CouchbaseUI {
 
                     updateStatusText("Update complete.");
                 } catch (Exception e) {
-                    updateStatusText(e);
+                    handleBucketCRUDException(e);
                 }
             }
         });
@@ -246,7 +237,7 @@ public class CouchbaseUI {
 
                     updateStatusText(dnfe);
                 } catch (Exception e) {
-                    updateStatusText(e);
+                    handleBucketCRUDException(e);
                 }
             }
         });
@@ -357,6 +348,30 @@ public class CouchbaseUI {
         });
     }
 
+    protected void handleBucketCRUDException(Exception e) {
+        String exceptionText = e.toString();
+
+        if (e instanceof FeatureNotAvailableException) {
+            // this is when there are no collections.  Need to clean out that.  Not so elegant, but...
+            String collectionRemove = comboboxCollection.getSelectedItem().toString();
+            getCurrentUserConfig().removeBucketCollection(
+                    (String) comboBucketName.getSelectedItem(), collectionRemove);
+            comboboxCollection.removeItem(collectionRemove);
+        }
+
+        if (exceptionText.contains("BUCKET_NOT_AVAILABLE")
+                || exceptionText.contains("BUCKET_OPEN_IN_PROGRESS")) {
+            // this is when the bucket doesn't exist
+            String bucketRemove = comboBucketName.getSelectedItem().toString();
+
+            getCurrentUserConfig().removeBucket(bucketRemove);
+            comboboxCollection.removeAllItems();
+            comboBucketName.removeItem(bucketRemove);
+        }
+        textareaValue.setText("");
+        updateStatusText(exceptionText);
+    }
+
     protected void updateClusterUsers() {
         comboboxUser.removeAllItems();
         password.setText("");
@@ -382,7 +397,7 @@ public class CouchbaseUI {
         UserConfig userConfig = getUserConfig();
 
         if (userConfig != null) {
-            for (String bucket: userConfig.getBuckets()) {
+            for (String bucket: userConfig.getBucketNames()) {
                 comboBucketName.addItem(bucket);
             }
         }
@@ -629,10 +644,6 @@ public class CouchbaseUI {
 
     private UserConfig getCurrentUserConfig() {
         return getCurrentClusterConfig().getUserConfig(comboboxUser.getSelectedItem().toString());
-    }
-
-    private List<String> getCurrentBucketCollections() {
-        return getCurrentUserConfig().getBucketCollections(comboBucketName.getSelectedItem().toString());
     }
 
     public static void main(String[] args) {

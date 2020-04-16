@@ -83,25 +83,44 @@ public class UserConfig extends EncryptedConfigItem {
     }
 
     @JsonIgnore
-    public List<String> getBuckets() {
-        List<String> buckets = new ArrayList<>(bucketsCollections.keySet());
-        Collections.sort(buckets);
-        return buckets;
+    public List<String> getBucketNames() {
+        List<String> bucketNames = new ArrayList<>(bucketsCollections.keySet());
+        Collections.sort(bucketNames);
+        return Collections.unmodifiableList(bucketNames);
+    }
+
+    public void removeBucket(String bucketName) {
+        bucketsCollections.remove(bucketName);
     }
 
     public List<String> getQueries() {
         return queries;
     }
 
-    public List<String> getBucketCollections(String bucket) {
+    /**
+     * gets a copy of the bucket collections
+     * @param bucketName
+     * @return
+     */
+    public List<String> getBucketCollections(String bucketName) {
         List<String> collections = new ArrayList<>();
 
-        bucket = bucket.trim();
-        if (bucketsCollections.get(bucket) != null) {
-            collections.addAll(bucketsCollections.get(bucket));
+        bucketName = bucketName.trim();
+        if (bucketsCollections.get(bucketName) != null) {
+            collections.addAll(bucketsCollections.get(bucketName));
         }
 
         Collections.sort(collections);
-        return collections;
+        return Collections.unmodifiableList(collections);
+    }
+
+    public void removeBucketCollection(String bucketName, String collection) {
+        bucketName = bucketName.trim();
+        collection = collection.trim();
+
+        if (bucketsCollections.get(bucketName) != null) {
+            bucketsCollections.get(bucketName).remove(collection);
+        }
+
     }
 }
