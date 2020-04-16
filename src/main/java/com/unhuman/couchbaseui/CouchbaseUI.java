@@ -6,6 +6,7 @@ import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.JsonNode;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.ObjectWriter;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.SerializationFeature;
 import com.couchbase.client.core.error.DocumentNotFoundException;
+import com.couchbase.client.core.error.FeatureNotAvailableException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonObject;
@@ -169,6 +170,14 @@ public class CouchbaseUI {
                     // currentExpiry = result.expiry().get();
 
                     updateStatusText("Fetch complete.");
+                } catch (FeatureNotAvailableException fnae) {
+                    // this is when there are no collections.  Need to clean out that.  Not so elegant, but...
+                    String itemRemove = comboboxCollection.getSelectedItem().toString();
+                    comboboxCollection.removeItem(itemRemove);
+                    getCurrentBucketCollections().remove(itemRemove);
+
+                    textareaValue.setText("");
+                    updateStatusText(fnae);
                 } catch (Exception e) {
                     textareaValue.setText("");
                     updateStatusText(e);
@@ -612,6 +621,18 @@ public class CouchbaseUI {
         } else {
             throw new RuntimeException("Unexpected TTL Type: " + comboBoxTTLDurationType.getSelectedItem());
         }
+    }
+
+    private ClusterConfig getCurrentClusterConfig() {
+        return config.getClusterConfig(comboClusterPicker.getSelectedItem().toString());
+    }
+
+    private UserConfig getCurrentUserConfig() {
+        return getCurrentClusterConfig().getUserConfig(comboboxUser.getSelectedItem().toString());
+    }
+
+    private List<String> getCurrentBucketCollections() {
+        return getCurrentUserConfig().getBucketCollections(comboBucketName.getSelectedItem().toString());
     }
 
     public static void main(String[] args) {
