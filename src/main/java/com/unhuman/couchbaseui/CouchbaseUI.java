@@ -369,7 +369,7 @@ public class CouchbaseUI {
             comboBucketName.removeItem(bucketRemove);
         }
         textareaValue.setText("");
-        updateStatusText(exceptionText);
+        updateStatusText(e);
     }
 
     protected void updateClusterUsers() {
@@ -588,7 +588,9 @@ public class CouchbaseUI {
         if (exception instanceof DocumentNotFoundException) {
             updateStatusText(Color.BLACK, Color.YELLOW, exception.getMessage());
         } else {
-            updateStatusText(Color.WHITE, DARK_RED, exception.getMessage());
+            // Clean off the package from the exception text
+            String exceptionMessage = exception.toString().replaceFirst("([^:])*\\.", "");
+            updateStatusText(Color.WHITE, DARK_RED, exceptionMessage);
         }
     }
 
