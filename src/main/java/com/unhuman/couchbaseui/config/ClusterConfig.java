@@ -46,4 +46,8 @@ public class ClusterConfig {
         }
         return userConfigs.get(user);
     }
+
+    public void removeUser(String user) {
+        userConfigs.remove(user);
+    }
 }

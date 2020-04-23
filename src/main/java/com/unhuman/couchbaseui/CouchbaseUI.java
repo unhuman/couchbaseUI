@@ -19,6 +19,7 @@ import com.unhuman.couchbaseui.config.UserConfig;
 import com.unhuman.couchbaseui.couchbase.CouchbaseClientManager;
 import com.unhuman.couchbaseui.entities.BucketCollection;
 import com.unhuman.couchbaseui.entities.ClusterConnection;
+import com.unhuman.couchbaseui.exceptions.BadInputException;
 import com.unhuman.couchbaseui.utils.Utilities;
 import us.monoid.json.JSONException;
 
@@ -34,6 +35,7 @@ import static com.unhuman.couchbaseui.utils.Utilities.trimString;
 
 public class CouchbaseUI {
     private static final Color DARK_RED = new Color(128, 0, 0);
+    private static final Color DARK_GREEN = new Color(0, 76, 0);
     private static final String NO_EXPIRY_STRING = "No Expiry";
 
     private final CouchbaseClientManager couchbase;
@@ -76,6 +78,10 @@ public class CouchbaseUI {
     private JComboBox comboBoxTTLDurationType;
     private JTextField textFieldTTLAmount;
     private JButton buttonSettings;
+    private JButton buttonDeleteCluster;
+    private JButton buttonDeleteUser;
+    private JButton buttonDeleteBucket;
+    private JButton buttonDeleteCollection;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
@@ -119,11 +125,11 @@ public class CouchbaseUI {
                     Collection collection = getBucketCollection();
 
                     if (Utilities.stringIsNullOrEmpty(textfieldDocumentKey.getText())) {
-                        throw new RuntimeException("Key must be provided");
+                        throw new BadInputException("Key must be provided");
                     }
 
                     if (Utilities.stringIsNullOrEmpty(textareaValue.getText())) {
-                        throw new RuntimeException("Content must be provided");
+                        throw new BadInputException("Content must be provided");
                     }
 
                     updateStatusTextProcessing();
@@ -138,7 +144,7 @@ public class CouchbaseUI {
                     // TODO: set currentExpiry
                     // currentExpiry = ttlDuration;
 
-                    updateStatusText("Create complete.");
+                    updateStatusSuccess("Create complete.");
                 } catch (Exception e) {
                     handleBucketCRUDException(e);
                 }
@@ -151,7 +157,7 @@ public class CouchbaseUI {
                     Collection collection = getBucketCollection();
 
                     if (Utilities.stringIsNullOrEmpty(textfieldDocumentKey.getText())) {
-                        throw new RuntimeException("Key must be provided");
+                        throw new BadInputException("Key must be provided");
                     }
 
                     updateStatusTextProcessing();
@@ -169,7 +175,7 @@ public class CouchbaseUI {
                     // TODO: set currentExpiry (this fails for now)
                     // currentExpiry = result.expiry().get();
 
-                    updateStatusText("Fetch complete.");
+                    updateStatusSuccess("Fetch complete.");
                 } catch (Exception e) {
                     handleBucketCRUDException(e);
                 }
@@ -183,11 +189,11 @@ public class CouchbaseUI {
                     Collection collection = getBucketCollection();
 
                     if (Utilities.stringIsNullOrEmpty(textfieldDocumentKey.getText())) {
-                        throw new RuntimeException("Key must be provided");
+                        throw new BadInputException("Key must be provided");
                     }
 
                     if (Utilities.stringIsNullOrEmpty(textareaValue.getText())) {
-                        throw new RuntimeException("Content must be provided");
+                        throw new BadInputException("Content must be provided");
                     }
 
                     updateStatusTextProcessing();
@@ -205,7 +211,7 @@ public class CouchbaseUI {
                     MutationResult result = collection.replace(documentKey, convertedObject, replaceOptions);
                     currentCAS = result.cas();
 
-                    updateStatusText("Update complete.");
+                    updateStatusSuccess("Update complete.");
                 } catch (Exception e) {
                     handleBucketCRUDException(e);
                 }
@@ -219,7 +225,7 @@ public class CouchbaseUI {
                     Collection collection = getBucketCollection();
 
                     if (Utilities.stringIsNullOrEmpty(textfieldDocumentKey.getText())) {
-                        throw new RuntimeException("Key must be provided");
+                        throw new BadInputException("Key must be provided");
                     }
 
                     updateStatusTextProcessing();
@@ -231,7 +237,7 @@ public class CouchbaseUI {
 
                     textareaValue.setText("");
 
-                    updateStatusText("Delete complete.");
+                    updateStatusSuccess("Delete complete.");
                 } catch (DocumentNotFoundException dnfe) {
                     textareaValue.setText("");
 
@@ -249,7 +255,7 @@ public class CouchbaseUI {
                     ClusterConnection clusterConnection = createClusterConfig();
 
                     if (Utilities.stringIsNullOrEmpty(textareaQuery.getText())) {
-                        throw new RuntimeException("Query must be provided");
+                        throw new BadInputException("Query must be provided");
                     }
 
                     updateStatusTextProcessing();
@@ -272,7 +278,7 @@ public class CouchbaseUI {
 
                     updateQueryStatus();
 
-                    updateStatusText("Query complete.");
+                    updateStatusSuccess("Query complete.");
 
                 } catch (Exception e) {
                     updateStatusText(e);
@@ -334,42 +340,63 @@ public class CouchbaseUI {
                 AboutDialog.display(panel);
             }
         });
-        buttonDeleteQuery.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                deleteCurrentQuery();
-            }
-        });
         buttonSettings.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 SettingsDialog.display(panel, config);
             }
         });
+        buttonDeleteCluster.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteCurrentCluster();
+            }
+        });
+        buttonDeleteUser.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteCurrentUser();
+            }
+        });
+        buttonDeleteBucket.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteCurrentBucket();
+            }
+        });
+        buttonDeleteQuery.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteCurrentQuery();
+            }
+        });
+        buttonDeleteCollection.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteCurrentCollection();
+            }
+        });
     }
 
     protected void handleBucketCRUDException(Exception e) {
         String exceptionText = e.toString();
+        updateStatusText(e);
+
+        // When there's bad input, don't clear out the UI
+        if (e instanceof BadInputException) {
+            return;
+        }
 
         if (e instanceof FeatureNotAvailableException) {
-            // this is when there are no collections.  Need to clean out that.  Not so elegant, but...
-            String collectionRemove = comboboxCollection.getSelectedItem().toString();
-            getCurrentUserConfig().removeBucketCollection(
-                    (String) comboBucketName.getSelectedItem(), collectionRemove);
-            comboboxCollection.removeItem(collectionRemove);
+            deleteCurrentCollection();
         }
 
-        if (exceptionText.contains("BUCKET_NOT_AVAILABLE")
-                || exceptionText.contains("BUCKET_OPEN_IN_PROGRESS")) {
+        if (exceptionText.contains("BUCKET_NOT_AVAILABLE")) {
             // this is when the bucket doesn't exist
-            String bucketRemove = comboBucketName.getSelectedItem().toString();
-
-            getCurrentUserConfig().removeBucket(bucketRemove);
-            comboboxCollection.removeAllItems();
-            comboBucketName.removeItem(bucketRemove);
+            deleteCurrentBucket();
         }
+
         textareaValue.setText("");
-        updateStatusText(e);
     }
 
     protected void updateClusterUsers() {
@@ -584,6 +611,10 @@ public class CouchbaseUI {
         updateStatusText(textStatusDisabledTextColor, textStatusBgColor, message);
     }
 
+    protected void updateStatusSuccess(String message) {
+        updateStatusText(DARK_GREEN, textStatusBgColor, message);
+    }
+
     protected void updateStatusText(Exception exception) {
         if (exception instanceof DocumentNotFoundException) {
             updateStatusText(Color.BLACK, Color.YELLOW, exception.getMessage());
@@ -623,29 +654,84 @@ public class CouchbaseUI {
         try {
             expiryNumeric = Long.parseLong(textFieldTTLAmount.getText().trim());
         } catch (Exception e) {
-            throw new RuntimeException("Problem parsing TTL.");
+            throw new BadInputException("Problem parsing TTL.");
         }
         if (comboBoxTTLDurationType.getSelectedItem() instanceof ChronoUnit) {
             if (expiryNumeric <= 0) {
-                throw new RuntimeException("Provided TTL must be positive value with time period.");
+                throw new BadInputException("Provided TTL must be positive value with time period.");
             }
             return Duration.of(expiryNumeric, (ChronoUnit) comboBoxTTLDurationType.getSelectedItem());
         } else if (comboBoxTTLDurationType.getSelectedItem().equals(NO_EXPIRY_STRING)) {
             if (expiryNumeric != 0) {
-                throw new RuntimeException("Provided TTL must be 0 when provided with " + NO_EXPIRY_STRING + ".");
+                throw new BadInputException("Provided TTL must be 0 when provided with " + NO_EXPIRY_STRING + ".");
             }
             return Duration.ZERO;
         } else {
-            throw new RuntimeException("Unexpected TTL Type: " + comboBoxTTLDurationType.getSelectedItem());
+            throw new BadInputException("Unexpected TTL Type: " + comboBoxTTLDurationType.getSelectedItem());
         }
     }
 
     private ClusterConfig getCurrentClusterConfig() {
-        return config.getClusterConfig(comboClusterPicker.getSelectedItem().toString());
+        Object selectedItem = comboClusterPicker.getSelectedItem();
+        return (selectedItem != null) ? config.getClusterConfig(selectedItem.toString()) : null;
     }
 
     private UserConfig getCurrentUserConfig() {
-        return getCurrentClusterConfig().getUserConfig(comboboxUser.getSelectedItem().toString());
+        Object selectedItem = comboboxUser.getSelectedItem();
+        return (getCurrentClusterConfig() != null && selectedItem != null)
+                ? getCurrentClusterConfig().getUserConfig(selectedItem.toString()) : null;
+    }
+
+    protected void deleteCurrentCluster() {
+        Object selectedItem = comboClusterPicker.getSelectedItem();
+        if (selectedItem != null) {
+            String clusterRemove = selectedItem.toString();
+            config.removeCluster(clusterRemove);
+            comboClusterPicker.removeItem(selectedItem);
+        }
+        comboClusterPicker.setSelectedIndex(-1);
+        deleteCurrentUser();
+    }
+
+    protected void deleteCurrentUser() {
+        Object selectedItem = comboboxUser.getSelectedItem();
+        if (selectedItem != null) {
+            String userRemove = selectedItem.toString();
+            if (getCurrentClusterConfig() != null) {
+                getCurrentClusterConfig().removeUser(userRemove);
+            }
+            comboboxUser.removeItem(selectedItem);
+        }
+        comboboxUser.setSelectedIndex(-1);
+        password.setText("");
+        deleteCurrentBucket();
+        deleteCurrentQuery();
+    }
+
+    protected void deleteCurrentBucket() {
+        Object selectedItem = comboBucketName.getSelectedItem();
+        if (selectedItem != null) {
+            String bucketRemove = selectedItem.toString();
+            if (getCurrentUserConfig() != null) {
+                getCurrentUserConfig().removeBucket(bucketRemove);
+            }
+            comboBucketName.removeItem(selectedItem);
+        }
+        comboBucketName.setSelectedIndex(-1);
+        deleteCurrentCollection();
+    }
+
+    protected void deleteCurrentCollection() {
+        Object selectedBucket = comboBucketName.getSelectedItem();
+        Object selectedCollection = comboboxCollection.getSelectedItem();
+        if (selectedCollection != null) {
+            String collectionRemove = selectedCollection.toString();
+            if (selectedBucket != null && getUserConfig() != null) {
+                getCurrentUserConfig().removeBucketCollection(selectedBucket.toString(), collectionRemove);
+            }
+            comboboxCollection.removeItem(selectedCollection);
+        }
+        comboboxCollection.setSelectedIndex(-1);
     }
 
     public static void main(String[] args) {
@@ -654,7 +740,10 @@ public class CouchbaseUI {
         JFrame frame = new JFrame("CouchbaseUI");
         frame.setContentPane(couchbaseUI.panel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationByPlatform(true);
         frame.pack();
+        frame.setPreferredSize(frame.getSize());
+        frame.setMinimumSize(frame.getSize());
 
         // Add window listener by implementing WindowAdapter class to
         // the frame instance. To handle the close event we just need

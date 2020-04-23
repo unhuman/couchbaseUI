@@ -14,16 +14,16 @@ public class CouchbaseUIConfig {
     @JsonIgnore
     private String secret;
 
-    private Map<String, ClusterConfig> servers;
+    private Map<String, ClusterConfig> clusters;
 
     private N1QLQueryRefreshHandling n1QLQueryRefreshHandling = N1QLQueryRefreshHandling.InPlace;
 
     private CouchbaseUIConfig() { } // for deserialization
 
-    private CouchbaseUIConfig(Map<String, ClusterConfig> servers) {
-        this.servers = new HashMap<>();
-        if (servers != null) {
-            this.servers.putAll(servers);
+    private CouchbaseUIConfig(Map<String, ClusterConfig> clusters) {
+        this.clusters = new HashMap<>();
+        if (clusters != null) {
+            this.clusters.putAll(clusters);
         }
     }
 
@@ -47,13 +47,13 @@ public class CouchbaseUIConfig {
 
     @JsonIgnore
     public List<String> getServerHostnames() {
-        List<String> hostnames = new ArrayList<>(servers.keySet());
+        List<String> hostnames = new ArrayList<>(clusters.keySet());
         Collections.sort(hostnames);
         return hostnames;
     }
 
     public ClusterConfig getClusterConfig(String hostname) {
-        return servers.get(hostname);
+        return clusters.get(hostname);
     }
 
     /**
@@ -63,7 +63,7 @@ public class CouchbaseUIConfig {
      * @return
      */
     public void upsertServer(ClusterConnection clusterConnection, BucketCollection bucketCollection) {
-        if (!this.servers.containsKey(clusterConnection.getHost())) {
+        if (!this.clusters.containsKey(clusterConnection.getHost())) {
             UserConfig userConfig = new UserConfig();
             userConfig.upsertBucketCollection(bucketCollection.getBucketName(), bucketCollection.getCollectionName());
             userConfig.setPassword(clusterConnection.getPassword());
@@ -71,9 +71,9 @@ public class CouchbaseUIConfig {
             ClusterConfig clusterConfig = new ClusterConfig();
             clusterConfig.upsertConfigServer(clusterConnection.getUser(), userConfig);
 
-            this.servers.put(clusterConnection.getHost(), clusterConfig);
+            this.clusters.put(clusterConnection.getHost(), clusterConfig);
         } else {
-            ClusterConfig clusterConfig = this.servers.get(clusterConnection.getHost());
+            ClusterConfig clusterConfig = this.clusters.get(clusterConnection.getHost());
             UserConfig userConfig = clusterConfig.getUserConfig(clusterConnection.getUser());
             userConfig.upsertBucketCollection(bucketCollection.getBucketName(), bucketCollection.getCollectionName());
             userConfig.setPassword(clusterConnection.getPassword());
@@ -87,19 +87,23 @@ public class CouchbaseUIConfig {
      * @return
      */
     public void upsertServer(ClusterConnection clusterConnection, String query) {
-        if (!this.servers.containsKey(clusterConnection.getHost())) {
+        if (!this.clusters.containsKey(clusterConnection.getHost())) {
             UserConfig userConfig = new UserConfig();
             userConfig.upsertQuery(n1QLQueryRefreshHandling, query);
 
             ClusterConfig clusterConfig = new ClusterConfig();
             clusterConfig.upsertConfigServer(clusterConnection.getUser(), userConfig);
 
-            this.servers.put(clusterConnection.getHost(), clusterConfig);
+            this.clusters.put(clusterConnection.getHost(), clusterConfig);
         } else {
-            ClusterConfig clusterConfig = this.servers.get(clusterConnection.getHost());
+            ClusterConfig clusterConfig = this.clusters.get(clusterConnection.getHost());
             UserConfig userConfig = clusterConfig.getUserConfig(clusterConnection.getUser());
             userConfig.upsertQuery(n1QLQueryRefreshHandling, query);
         }
+    }
+
+    public void removeCluster(String clusterName) {
+        clusters.remove(clusterName);
     }
 
     public N1QLQueryRefreshHandling getN1QLQueryRefreshHandling() {
