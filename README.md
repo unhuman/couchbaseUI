@@ -14,4 +14,4 @@ https://github.com/codesqueak/jackson-json-crypto
 
 
 If you like this, please email unhumansoftware@gmail.com to let us know!
-And, if you really want to be nice, you can PayPal a donation, but it's not expected.
+And, if you really want to be nice, you can PayPal a donation, but it's not expected.  Better yet, let me know you've made a donation to a food bank.
