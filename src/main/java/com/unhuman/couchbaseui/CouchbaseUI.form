@@ -91,6 +91,7 @@
                       </grid>
                     </constraints>
                     <properties>
+                      <focusable value="false"/>
                       <text value="-"/>
                     </properties>
                   </component>
@@ -140,6 +141,7 @@
                       </grid>
                     </constraints>
                     <properties>
+                      <focusable value="false"/>
                       <text value="-"/>
                     </properties>
                   </component>
@@ -417,6 +419,7 @@
                                   </grid>
                                 </constraints>
                                 <properties>
+                                  <focusable value="false"/>
                                   <text value="-"/>
                                 </properties>
                               </component>
@@ -434,6 +437,7 @@
                                   </grid>
                                 </constraints>
                                 <properties>
+                                  <focusable value="false"/>
                                   <text value="-"/>
                                 </properties>
                               </component>

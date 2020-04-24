@@ -380,6 +380,7 @@ public class CouchbaseUI {
 
     protected void handleBucketCRUDException(Exception e) {
         String exceptionText = e.toString();
+
         updateStatusText(e);
 
         // When there's bad input, don't clear out the UI
@@ -616,12 +617,17 @@ public class CouchbaseUI {
     }
 
     protected void updateStatusText(Exception exception) {
+        String exceptionText = exception.getMessage();
+        if ((exception instanceof IOException) && exceptionText.contains("closed")) {
+            exceptionText += ": Likely invalid password";
+        }
+
         if (exception instanceof DocumentNotFoundException) {
-            updateStatusText(Color.BLACK, Color.YELLOW, exception.getMessage());
+            updateStatusText(Color.BLACK, Color.YELLOW, exceptionText);
         } else {
             // Clean off the package from the exception text
-            String exceptionMessage = exception.toString().replaceFirst("([^:])*\\.", "");
-            updateStatusText(Color.WHITE, DARK_RED, exceptionMessage);
+            exceptionText = exceptionText.replaceFirst("([^:])*\\.", "");
+            updateStatusText(Color.WHITE, DARK_RED, exceptionText);
         }
     }
 
