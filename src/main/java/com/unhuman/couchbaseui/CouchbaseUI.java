@@ -20,18 +20,23 @@ import com.unhuman.couchbaseui.couchbase.CouchbaseClientManager;
 import com.unhuman.couchbaseui.entities.BucketCollection;
 import com.unhuman.couchbaseui.entities.ClusterConnection;
 import com.unhuman.couchbaseui.exceptions.BadInputException;
+import com.unhuman.couchbaseui.logging.MemoryHandler2;
 import com.unhuman.couchbaseui.utils.Utilities;
 import us.monoid.json.JSONException;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.logging.*;
 
 import static com.unhuman.couchbaseui.utils.Utilities.trimString;
+import static java.awt.SystemColor.menu;
 
 public class CouchbaseUI {
     private static final Color DARK_RED = new Color(128, 0, 0);
@@ -82,6 +87,9 @@ public class CouchbaseUI {
     private JButton buttonDeleteUser;
     private JButton buttonDeleteBucket;
     private JButton buttonDeleteCollection;
+    private JTextArea textAreaLogs;
+    private JButton buttonClearLogs;
+    private JCheckBox checkBoxLogsWordWrap;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
@@ -91,10 +99,25 @@ public class CouchbaseUI {
     // Flag to indicate the UI is updating itself, so don't process events
     private boolean isUISelfUpdating = false;
 
+    private MemoryHandler2 memoryHandler;
+
     // TODO: Fix expiry tracking
     // private Duration currentExpiry;
 
     public CouchbaseUI() {
+        // Create and deflect logs
+        memoryHandler = new MemoryHandler2();
+
+        // https://stackoverflow.com/questions/311408/turning-off-hibernate-logging-console-output/25768383#25768383
+        //magical - do not touch
+        @SuppressWarnings("unused")
+        org.jboss.logging.Logger logger = org.jboss.logging.Logger.getLogger("org.hibernate");
+
+        // set simple default log levels
+        adjustLogLevel("com.unhuman", Level.INFO);
+        adjustLogLevel("com.couchbase.client", Level.OFF);
+        adjustLogLevel("org.hibernate", Level.OFF);
+
         // Set the global mapper to pretty print
         JacksonTransformers.MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
         DefaultPrettyPrinter prettyPrinter = new DefaultPrettyPrinter();
@@ -374,6 +397,42 @@ public class CouchbaseUI {
             @Override
             public void actionPerformed(ActionEvent e) {
                 deleteCurrentCollection();
+            }
+        });
+        tabPanelOperations.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                if ("Logs".equals(tabPanelOperations.getTitleAt(tabPanelOperations.getSelectedIndex()))) {
+                    textAreaLogs.removeAll();
+                    textAreaLogs.setText(String.join("\n", memoryHandler.getMessages()));
+                    checkBoxLogsWordWrap.setSelected(config.isLogsWordWrap());
+                    textAreaLogs.setLineWrap(config.isLogsWordWrap());
+
+                    // Display the bottom left of the logs (varies if low wrap or not)
+                    int forceShowIndex;
+                    if (config.isLogsWordWrap()) {
+                        forceShowIndex = textAreaLogs.getText().length();
+                    } else {
+                        forceShowIndex = textAreaLogs.getText().lastIndexOf('\n');
+                        if (forceShowIndex > 0) {
+                            forceShowIndex = forceShowIndex + 1;
+                        }
+                    }
+                    textAreaLogs.setCaretPosition(forceShowIndex);
+                }
+            }
+        });
+        buttonClearLogs.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                memoryHandler.flush();
+                textAreaLogs.setText("");
+            }
+        });
+        checkBoxLogsWordWrap.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                config.setLogsWordWrap(checkBoxLogsWordWrap.isSelected());
+                textAreaLogs.setLineWrap(checkBoxLogsWordWrap.isSelected());
             }
         });
     }
@@ -738,6 +797,17 @@ public class CouchbaseUI {
             comboboxCollection.removeItem(selectedCollection);
         }
         comboboxCollection.setSelectedIndex(-1);
+    }
+
+    private void adjustLogLevel(String loggerFilter, Level level) {
+        Logger logger = Logger.getLogger(loggerFilter);
+        logger.setLevel(level);
+        for(Handler h : logger.getParent().getHandlers()) {
+            if(h instanceof ConsoleHandler) {
+                logger.getParent().removeHandler(h);
+                logger.getParent().addHandler(memoryHandler);
+            }
+        }
     }
 
     public static void main(String[] args) {

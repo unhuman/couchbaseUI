@@ -2,17 +2,32 @@ package com.unhuman.couchbaseui.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.unhuman.couchbaseui.entities.BucketCollection;
 import com.unhuman.couchbaseui.entities.ClusterConnection;
 
 import java.util.*;
+import java.util.logging.Level;
 
 @JsonSerialize
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class CouchbaseUIConfig {
+    private static final int DEFAULT_LOG_SIZE = 250;
+    public static final int MAXIMUM_LOG_SIZE = 10000;
+
     @JsonIgnore
     private String secret;
+
+    private Integer logHistorySize;
+
+    @JsonIgnore
+    private Level couchbaseUILogLevel;
+
+    @JsonIgnore
+    private Level couchbaseClientLogLevel;
+
+    private boolean logsWordWrap;
 
     private Map<String, ClusterConfig> clusters;
 
@@ -44,6 +59,61 @@ public class CouchbaseUIConfig {
         this.secret = (secret != null && secret.trim().length() > 0) ? secret.trim() : null;
     }
 
+    public Integer getLogHistorySize() {
+        return (logHistorySize != null) ? logHistorySize : DEFAULT_LOG_SIZE;
+    }
+
+    public void setLogHistorySize(Integer logHistorySize) {
+        this.logHistorySize = logHistorySize;
+    }
+
+    @JsonIgnore
+    public Level getCouchbaseUILogLevel() {
+        return (couchbaseUILogLevel != null) ? couchbaseUILogLevel : Level.OFF;
+    }
+
+    @JsonProperty("couchbaseUILogLevel")
+    public String getCouchbaseUILogLevelForConfigFile() {
+        return getCouchbaseUILogLevel().getName();
+    }
+
+    @JsonIgnore
+    public void setCouchbaseUILogLevel(Level couchbaseUILogLevel) {
+        this.couchbaseUILogLevel = couchbaseUILogLevel;
+    }
+
+    @JsonProperty("couchbaseUILogLevel")
+    public void setCouchbaseUILogLevelFromConfigFile(String value) {
+        this.couchbaseUILogLevel = Level.parse(value);
+    }
+
+    @JsonIgnore
+    public Level getCouchbaseClientLogLevel() {
+        return (couchbaseClientLogLevel != null) ? couchbaseClientLogLevel : Level.OFF;
+    }
+
+    @JsonProperty("couchbaseClientLogLevel")
+    public String getCouchbaseClientLogLevelForConfigFile() {
+        return getCouchbaseClientLogLevel().getName();
+    }
+
+    @JsonIgnore
+    public void setCouchbaseClientLogLevel(Level couchbaseClientLogLevel) {
+        this.couchbaseClientLogLevel = couchbaseClientLogLevel;
+    }
+
+    @JsonProperty("couchbaseClientLogLevel")
+    public void setCouchbaseClientLogLevelFromConfigFile(String value) {
+        this.couchbaseClientLogLevel = Level.parse(value);
+    }
+
+    public boolean isLogsWordWrap() {
+        return logsWordWrap;
+    }
+
+    public void setLogsWordWrap(boolean logsWordWrap) {
+        this.logsWordWrap = logsWordWrap;
+    }
 
     @JsonIgnore
     public List<String> getServerHostnames() {
