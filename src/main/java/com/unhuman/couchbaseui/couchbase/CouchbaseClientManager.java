@@ -5,6 +5,7 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
+import com.unhuman.couchbaseui.AlertsDialog;
 import com.unhuman.couchbaseui.entities.BucketCollection;
 import com.unhuman.couchbaseui.entities.ClusterConnection;
 import com.unhuman.couchbaseui.utils.Utilities;
@@ -14,6 +15,7 @@ import us.monoid.json.JSONObject;
 import us.monoid.web.JSONResource;
 import us.monoid.web.Resty;
 
+import java.awt.Component;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,19 +37,21 @@ public class CouchbaseClientManager {
         this.connectedClusters = new HashMap<>();
     }
 
-    public Collection getBucketCollection(ClusterConnection clusterConnection, BucketCollection bucketCollection)
+    public Collection getBucketCollection(Component parentComponent, ClusterConnection clusterConnection,
+                                          BucketCollection bucketCollection)
             throws IOException, JSONException {
         if (Utilities.stringIsNullOrEmpty(bucketCollection.getBucketName())) {
             throw new RuntimeException("Bucket Name must be provided");
         }
 
-        Bucket bucket = getCluster(clusterConnection).bucket(bucketCollection.getBucketName());
+        Bucket bucket = getCluster(parentComponent, clusterConnection).bucket(bucketCollection.getBucketName());
         return (bucketCollection.hasCollectionName())
                 ? bucket.collection(bucketCollection.getCollectionName())
                 : bucket.defaultCollection();
     }
 
-    public Cluster getCluster(ClusterConnection clusterConnection) throws IOException, JSONException {
+    public Cluster getCluster(Component parentComponent, ClusterConnection clusterConnection)
+            throws IOException, JSONException {
         // Check the local cache
         if (connectedClusters.containsKey(clusterConnection)) {
             return connectedClusters.get(clusterConnection);
@@ -61,8 +65,15 @@ public class CouchbaseClientManager {
         restHandler.withHeader("Accept", "application/json");
 
         // TODO: Support other protocols, cleanup
-        JSONResource resource = restHandler.json("http://" + clusterConnection.getHost() + ":8091" + CLUSTER_MAP_ENDPOINT);
+        JSONResource resource =
+                restHandler.json("http://" + clusterConnection.getHost() + ":8091" + CLUSTER_MAP_ENDPOINT);
         JSONObject responseContents = resource.object();
+
+        if (AlertsDialog.display(parentComponent, (JSONArray) responseContents.get("alerts"))) {
+            JSONResource clearResource = restHandler.json(
+                    "http://" + clusterConnection.getHost() + ":8091" + responseContents.get("alertsSilenceURL"));
+        }
+
         List<String> kvNodes = getKVNodes(responseContents);
 
         // connect to the cluster (right now, it just picks first item out of cluster map)

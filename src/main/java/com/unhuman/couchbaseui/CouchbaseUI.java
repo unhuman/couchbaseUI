@@ -261,7 +261,7 @@ public class CouchbaseUI {
                     updateStatusTextProcessing();
 
                     String query = trimString(textareaQuery.getText());
-                    QueryResult result = couchbase.getCluster(clusterConnection).query(query);
+                    QueryResult result = couchbase.getCluster(panel, clusterConnection).query(query);
                     result.metaData();
 
                     // Get the results as pretty-printed content
@@ -553,7 +553,7 @@ public class CouchbaseUI {
         ClusterConnection clusterConnection = createClusterConfig();
         BucketCollection bucketCollection = createBucketCollection();
 
-        Collection collection = couchbase.getBucketCollection(clusterConnection, bucketCollection);
+        Collection collection = couchbase.getBucketCollection(panel, clusterConnection, bucketCollection);
 
         // We did something successful, update the config
         config.upsertServer(clusterConnection, bucketCollection);
@@ -631,6 +631,15 @@ public class CouchbaseUI {
         }
     }
 
+    private void updateStatusText(Color disabledTextColor, Color background, String message) {
+        textStatus.setDisabledTextColor(disabledTextColor);
+        textStatus.setBackground(background);
+        textStatus.setText(message);
+        textStatus.setToolTipText(message);
+        textStatus.setCaretPosition(0);
+        textStatus.update(textStatus.getGraphics());
+    }
+
     protected ClusterConfig getClusterConfig() {
         String host = getSelectedText(comboClusterPicker);
         ClusterConfig clusterConfig = config.getClusterConfig(host);
@@ -644,15 +653,6 @@ public class CouchbaseUI {
                 ? clusterConfig.getUserConfig(getSelectedText(comboboxUser))
                 : null;
         return userConfig;
-    }
-
-    private void updateStatusText(Color disabledTextColor, Color background, String message) {
-        textStatus.setDisabledTextColor(disabledTextColor);
-        textStatus.setBackground(background);
-        textStatus.setText(message);
-        textStatus.setToolTipText(message);
-        textStatus.setCaretPosition(0);
-        textStatus.update(textStatus.getGraphics());
     }
 
     private Duration calculateExpiry() {
