@@ -86,7 +86,7 @@ public class SettingsDialog extends JDialog {
                 try {
                     checkLogHistorySize = Integer.parseInt(textFieldLogHistorySize.getText());
 
-                    if (checkLogHistorySize < 0) {
+                    if (checkLogHistorySize <= 0) {
                         JOptionPane.showMessageDialog(contentPane, "Log History Size must be > 0.",
                                 "Settings Error", JOptionPane.ERROR_MESSAGE);
                         return;

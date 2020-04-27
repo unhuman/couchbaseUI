@@ -112,11 +112,6 @@ public class CouchbaseUI {
         // Create and deflect logs
         memoryHandler = new MemoryHandler2();
 
-        // https://stackoverflow.com/questions/311408/turning-off-hibernate-logging-console-output/25768383#25768383
-        //magical - do not touch
-        @SuppressWarnings("unused")
-        org.jboss.logging.Logger logger = org.jboss.logging.Logger.getLogger("org.hibernate");
-
         // set simple default log levels
         adjustLogLevel("com.unhuman", Level.INFO);
         adjustLogLevel("com.couchbase.client", Level.OFF);
@@ -177,6 +172,7 @@ public class CouchbaseUI {
                 }
             }
         });
+
         // Setup KV Fetch Document button
         fetchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
@@ -208,6 +204,8 @@ public class CouchbaseUI {
                 }
             }
         });
+
+
 
         // Setup KV Update Document button
         updateButton.addActionListener(new ActionListener() {
@@ -371,6 +369,8 @@ public class CouchbaseUI {
             @Override
             public void actionPerformed(ActionEvent e) {
                 SettingsDialog.display(panel, config);
+                adjustLogLevel("com.unhuman", config.getCouchbaseUILogLevel());
+                adjustLogLevel("com.couchbase.client", config.getCouchbaseClientLogLevel());
             }
         });
         buttonDeleteCluster.addActionListener(new ActionListener() {
@@ -421,7 +421,10 @@ public class CouchbaseUI {
                             forceShowIndex = forceShowIndex + 1;
                         }
                     }
-                    textAreaLogs.setCaretPosition(forceShowIndex);
+
+                    if (forceShowIndex > 0) {
+                        textAreaLogs.setCaretPosition(forceShowIndex);
+                    }
                 }
             }
         });
@@ -583,6 +586,12 @@ public class CouchbaseUI {
             for (String hostname : hostnames) {
                 comboClusterPicker.addItem(hostname);
             }
+            memoryHandler.setConfig(config);
+            // Flush the logs - hibernate logs something we don't need to worry about
+            memoryHandler.flush();
+
+            adjustLogLevel("com.unhuman", config.getCouchbaseUILogLevel());
+            adjustLogLevel("com.couchbase.client", config.getCouchbaseClientLogLevel());
         } catch (Exception e) {
             updateStatusText(e);
             config = ConfigFileManager.CreateEmptyConfig();

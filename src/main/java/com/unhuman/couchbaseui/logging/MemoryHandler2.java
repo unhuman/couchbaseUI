@@ -1,5 +1,8 @@
 package com.unhuman.couchbaseui.logging;
 
+import com.unhuman.couchbaseui.config.CouchbaseUIConfig;
+
+import java.lang.module.Configuration;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,18 +14,30 @@ import java.util.logging.LogRecord;
 
 public class MemoryHandler2 extends Handler {
     private static final DateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
-    List<String> messages = Collections.synchronizedList(new ArrayList<>());
+    private List<String> messages;
+    private volatile CouchbaseUIConfig configuration;
 
     /**
      * Memory Handler for logs
      */
     public MemoryHandler2() {
         super();
+        configuration = null;
+        this.messages = new ArrayList<>(1000);
+    }
+
+    public void setConfig(CouchbaseUIConfig configuration) {
+        this.configuration = configuration;
     }
 
     @Override
     public void publish(LogRecord record) {
-        messages.add(LOG_DATE_FORMAT.format(new Date()) + ": " + record.getMessage());
+        synchronized (messages) {
+            messages.add(LOG_DATE_FORMAT.format(new Date()) + " - " + record.getLevel() + ": " + record.getMessage());
+            if (configuration != null && messages.size() > configuration.getLogHistorySize()) {
+                this.messages.subList(0, messages.size() - configuration.getLogHistorySize()).clear();
+            }
+        }
     }
 
     @Override
@@ -35,6 +50,8 @@ public class MemoryHandler2 extends Handler {
     }
 
     public List<String> getMessages() {
-        return Collections.unmodifiableList(messages);
+        synchronized (messages) {
+            return Collections.unmodifiableList(new ArrayList<>(messages));
+        }
     }
 }
