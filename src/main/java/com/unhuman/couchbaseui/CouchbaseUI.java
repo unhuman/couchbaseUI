@@ -12,6 +12,9 @@ import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.*;
 import com.couchbase.client.java.query.QueryResult;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.unhuman.couchbaseui.config.ClusterConfig;
 import com.unhuman.couchbaseui.config.ConfigFileManager;
 import com.unhuman.couchbaseui.config.CouchbaseUIConfig;
@@ -25,6 +28,7 @@ import com.unhuman.couchbaseui.utils.Utilities;
 import us.monoid.json.JSONException;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
@@ -158,7 +162,7 @@ public class CouchbaseUI {
                     updateStatusTextProcessing();
 
                     String documentKey = trimString(textfieldDocumentKey.getText());
-                    JsonNode convertedObject = JacksonTransformers.MAPPER. readTree(textareaValue.getText());
+                    JsonNode convertedObject = JacksonTransformers.MAPPER.readTree(textareaValue.getText());
                     Duration expiryDuration = calculateExpiry();
                     InsertOptions insertOptions = InsertOptions.insertOptions().expiry(expiryDuration);
                     MutationResult result = collection.insert(documentKey, convertedObject, insertOptions);
@@ -229,7 +233,7 @@ public class CouchbaseUI {
                             .cas(currentCAS)
                             .expiry(expiry);
 
-                    JsonNode convertedObject = JacksonTransformers.MAPPER. readTree(textareaValue.getText());
+                    JsonNode convertedObject = JacksonTransformers.MAPPER.readTree(textareaValue.getText());
 
                     MutationResult result = collection.replace(documentKey, convertedObject, replaceOptions);
                     currentCAS = result.cas();
@@ -297,7 +301,7 @@ public class CouchbaseUI {
                     config.upsertServer(clusterConnection, query);
 
                     // Find the query we just ran and indicate it to be the current one
-                    for (currentQuery = queries.size(); !queries.get(currentQuery - 1).equals(query); currentQuery--);
+                    for (currentQuery = queries.size(); !queries.get(currentQuery - 1).equals(query); currentQuery--) ;
 
                     updateQueryStatus();
 
@@ -465,7 +469,7 @@ public class CouchbaseUI {
 
         ClusterConfig clusterConfig = getClusterConfig();
         if (clusterConfig != null) {
-            for (String user: clusterConfig.getUsers()) {
+            for (String user : clusterConfig.getUsers()) {
                 comboboxUser.addItem(user);
             }
         }
@@ -484,7 +488,7 @@ public class CouchbaseUI {
         UserConfig userConfig = getUserConfig();
 
         if (userConfig != null) {
-            for (String bucket: userConfig.getBucketNames()) {
+            for (String bucket : userConfig.getBucketNames()) {
                 comboBucketName.addItem(bucket);
             }
         }
@@ -496,7 +500,7 @@ public class CouchbaseUI {
         UserConfig userConfig = getUserConfig();
         if (userConfig != null) {
             List<String> collections = userConfig.getBucketCollections(getSelectedText(comboBucketName));
-            for (String collection: collections) {
+            for (String collection : collections) {
                 comboboxCollection.addItem(collection);
             }
         }
@@ -576,7 +580,7 @@ public class CouchbaseUI {
 
             // populate the combo box with cluster info (only)
             List<String> hostnames = config.getServerHostnames();
-            for (String hostname: hostnames) {
+            for (String hostname : hostnames) {
                 comboClusterPicker.addItem(hostname);
             }
         } catch (Exception e) {
@@ -639,7 +643,7 @@ public class CouchbaseUI {
         }
 
         int insertItemLocation;
-        for (insertItemLocation = 0; insertItemLocation < comboBox.getItemCount(); insertItemLocation++ ) {
+        for (insertItemLocation = 0; insertItemLocation < comboBox.getItemCount(); insertItemLocation++) {
             String item = comboBox.getItemAt(insertItemLocation).toString();
             int comparison = item.compareTo(newItem);
             if (comparison == 0) {
@@ -802,8 +806,8 @@ public class CouchbaseUI {
     private void adjustLogLevel(String loggerFilter, Level level) {
         Logger logger = Logger.getLogger(loggerFilter);
         logger.setLevel(level);
-        for(Handler h : logger.getParent().getHandlers()) {
-            if(h instanceof ConsoleHandler) {
+        for (Handler h : logger.getParent().getHandlers()) {
+            if (h instanceof ConsoleHandler) {
                 logger.getParent().removeHandler(h);
                 logger.getParent().addHandler(memoryHandler);
             }
@@ -835,4 +839,281 @@ public class CouchbaseUI {
 
         couchbaseUI.loadConfig(frame);
     }
+
+    {
+// GUI initializer generated by IntelliJ IDEA GUI Designer
+// >>> IMPORTANT!! <<<
+// DO NOT EDIT OR ADD ANY CODE HERE!
+        $$$setupUI$$$();
+    }
+
+    /**
+     * Method generated by IntelliJ IDEA GUI Designer
+     * >>> IMPORTANT!! <<<
+     * DO NOT edit this method OR call it in your code!
+     *
+     * @noinspection ALL
+     */
+    private void $$$setupUI$$$() {
+        panel = new JPanel();
+        panel.setLayout(new GridLayoutManager(1, 2, new Insets(5, 5, 5, 5), -1, -1));
+        panel.setMinimumSize(new Dimension(740, 400));
+        panel.setPreferredSize(new Dimension(740, 400));
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel.add(panel1, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panelCluster = new JPanel();
+        panelCluster.setLayout(new GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.add(panelCluster, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        final JLabel label1 = new JLabel();
+        label1.setText("Cluster:");
+        panelCluster.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label2 = new JLabel();
+        label2.setRequestFocusEnabled(false);
+        label2.setText("User:");
+        panelCluster.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel2 = new JPanel();
+        panel2.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), 0, 0));
+        panelCluster.add(panel2, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
+        final JLabel label3 = new JLabel();
+        label3.setText("Password:");
+        panel2.add(label3, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        password = new JPasswordField();
+        panel2.add(password, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, new Dimension(175, -1), new Dimension(175, -1), new Dimension(175, -1), 0, false));
+        comboboxUser = new JComboBox();
+        comboboxUser.setEditable(true);
+        panel2.add(comboboxUser, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, new Dimension(175, -1), new Dimension(175, -1), new Dimension(175, -1), 0, false));
+        buttonDeleteUser = new JButton();
+        buttonDeleteUser.setFocusable(false);
+        buttonDeleteUser.setText("-");
+        panel2.add(buttonDeleteUser, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(45, -1), new Dimension(45, -1), new Dimension(45, -1), 0, false));
+        final Spacer spacer1 = new Spacer();
+        panel2.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        buttonSettings = new JButton();
+        buttonSettings.setLabel("Settings");
+        buttonSettings.setText("Settings");
+        panelCluster.add(buttonSettings, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), 0, 0));
+        panelCluster.add(panel3, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_FIXED, 1, null, null, null, 0, false));
+        comboClusterPicker = new JComboBox();
+        comboClusterPicker.setEditable(true);
+        final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
+        comboClusterPicker.setModel(defaultComboBoxModel1);
+        panel3.add(comboClusterPicker, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(420, -1), new Dimension(420, -1), new Dimension(420, -1), 0, false));
+        buttonDeleteCluster = new JButton();
+        buttonDeleteCluster.setFocusable(false);
+        buttonDeleteCluster.setText("-");
+        panel3.add(buttonDeleteCluster, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(45, -1), new Dimension(45, -1), new Dimension(45, -1), 0, false));
+        final Spacer spacer2 = new Spacer();
+        panelCluster.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panelStatus = new JPanel();
+        panelStatus.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.add(panelStatus, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        final JLabel label4 = new JLabel();
+        label4.setEnabled(false);
+        label4.setText("Status:");
+        panelStatus.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        textStatus = new JTextField();
+        textStatus.setColumns(2);
+        textStatus.setEditable(false);
+        textStatus.setEnabled(false);
+        textStatus.setHorizontalAlignment(10);
+        panelStatus.add(textStatus, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonAbout = new JButton();
+        buttonAbout.setText("About");
+        panelStatus.add(buttonAbout, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        tabPanelOperations = new JTabbedPane();
+        tabPanelOperations.setTabPlacement(1);
+        panel1.add(tabPanelOperations, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        tabKeyValue = new JPanel();
+        tabKeyValue.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 5, 0), -1, -1));
+        tabPanelOperations.addTab("Key/Value", tabKeyValue);
+        panelKVActions = new JPanel();
+        panelKVActions.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabKeyValue.add(panelKVActions, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_NORTHEAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        createButton = new JButton();
+        createButton.setText("Create");
+        panelKVActions.add(createButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        fetchButton = new JButton();
+        fetchButton.setText("Fetch");
+        panelKVActions.add(fetchButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        updateButton = new JButton();
+        updateButton.setText("Update");
+        panelKVActions.add(updateButton, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        deleteButton = new JButton();
+        deleteButton.setText("Delete");
+        panelKVActions.add(deleteButton, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelKVActions.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new BorderLayout(0, 0));
+        panel4.add(panel5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        final JLabel label5 = new JLabel();
+        label5.setHorizontalAlignment(2);
+        label5.setHorizontalTextPosition(2);
+        label5.setText("TTL:");
+        panel5.add(label5, BorderLayout.WEST);
+        textFieldTTLAmount = new JTextField();
+        textFieldTTLAmount.setMaximumSize(new Dimension(64, 30));
+        panel5.add(textFieldTTLAmount, BorderLayout.CENTER);
+        comboBoxTTLDurationType = new JComboBox();
+        panel5.add(comboBoxTTLDurationType, BorderLayout.SOUTH);
+        panelKVContent = new JPanel();
+        panelKVContent.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabKeyValue.add(panelKVContent, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        panelMetadata = new JPanel();
+        panelMetadata.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panelKVContent.add(panelMetadata, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        textfieldMetadata = new JTextField();
+        textfieldMetadata.setEditable(false);
+        textfieldMetadata.setEnabled(false);
+        panelMetadata.add(textfieldMetadata, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        final JLabel label6 = new JLabel();
+        label6.setEnabled(false);
+        label6.setText("Metadata:");
+        panelMetadata.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JScrollPane scrollPane1 = new JScrollPane();
+        scrollPane1.setHorizontalScrollBarPolicy(30);
+        panelKVContent.add(scrollPane1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        textareaValue = new JTextArea();
+        textareaValue.setLineWrap(false);
+        scrollPane1.setViewportView(textareaValue);
+        final JPanel panel6 = new JPanel();
+        panel6.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panelKVContent.add(panel6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        textfieldDocumentKey = new JTextField();
+        panel6.add(textfieldDocumentKey, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        final JLabel label7 = new JLabel();
+        label7.setText("Key:");
+        panel6.add(label7, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label8 = new JLabel();
+        label8.setText("Bucket:");
+        panel6.add(label8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new GridLayoutManager(1, 7, new Insets(0, 0, 0, 0), 0, -1));
+        panel6.add(panel7, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        comboBucketName = new JComboBox();
+        comboBucketName.setEditable(true);
+        panel7.add(comboBucketName, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, new Dimension(150, -1), new Dimension(150, -1), new Dimension(150, -1), 0, false));
+        final JLabel label9 = new JLabel();
+        label9.setText("Collection (optional):");
+        panel7.add(label9, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        comboboxCollection = new JComboBox();
+        comboboxCollection.setEditable(true);
+        panel7.add(comboboxCollection, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(150, -1), new Dimension(150, -1), new Dimension(150, -1), 0, false));
+        buttonDeleteBucket = new JButton();
+        buttonDeleteBucket.setFocusable(false);
+        buttonDeleteBucket.setText("-");
+        panel7.add(buttonDeleteBucket, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, 1, GridConstraints.SIZEPOLICY_FIXED, new Dimension(45, -1), new Dimension(45, -1), new Dimension(45, -1), 0, false));
+        final Spacer spacer3 = new Spacer();
+        panel7.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, 1, null, null, null, 0, false));
+        buttonDeleteCollection = new JButton();
+        buttonDeleteCollection.setFocusable(false);
+        buttonDeleteCollection.setText("-");
+        panel7.add(buttonDeleteCollection, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, 1, GridConstraints.SIZEPOLICY_FIXED, new Dimension(45, -1), new Dimension(45, -1), new Dimension(45, -1), 0, false));
+        final Spacer spacer4 = new Spacer();
+        panel7.add(spacer4, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        tabN1QL = new JPanel();
+        tabN1QL.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabPanelOperations.addTab("N1QL", tabN1QL);
+        panelN1QL = new JPanel();
+        panelN1QL.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
+        tabN1QL.add(panelN1QL, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JLabel label10 = new JLabel();
+        label10.setEnabled(false);
+        label10.setText("Response:");
+        panelN1QL.add(label10, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_NORTHEAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new BorderLayout(0, 0));
+        panelN1QL.add(panel8, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel9 = new JPanel();
+        panel9.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel8.add(panel9, BorderLayout.SOUTH);
+        buttonQuery = new JButton();
+        buttonQuery.setActionCommand("performN1qlQuery");
+        buttonQuery.setLabel("Query");
+        buttonQuery.setText("Query");
+        panel9.add(buttonQuery, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JScrollPane scrollPane2 = new JScrollPane();
+        panel8.add(scrollPane2, BorderLayout.CENTER);
+        textareaQuery = new JTextArea();
+        scrollPane2.setViewportView(textareaQuery);
+        final JPanel panel10 = new JPanel();
+        panel10.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelN1QL.add(panel10, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane3 = new JScrollPane();
+        panel10.add(scrollPane3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        textareaQueryResponse = new JTextArea();
+        textareaQueryResponse.setEditable(false);
+        textareaQueryResponse.setEnabled(true);
+        scrollPane3.setViewportView(textareaQueryResponse);
+        final JPanel panel11 = new JPanel();
+        panel11.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelN1QL.add(panel11, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JLabel label11 = new JLabel();
+        label11.setText("Query:");
+        panel11.add(label11, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer5 = new Spacer();
+        panel11.add(spacer5, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        labelQueryIndicator = new JLabel();
+        labelQueryIndicator.setText("1/1");
+        panel11.add(labelQueryIndicator, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel12 = new JPanel();
+        panel12.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        panel11.add(panel12, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonPrevQuery = new JButton();
+        buttonPrevQuery.setHorizontalTextPosition(0);
+        buttonPrevQuery.setMaximumSize(new Dimension(32, 30));
+        buttonPrevQuery.setMinimumSize(new Dimension(32, 30));
+        buttonPrevQuery.setPreferredSize(new Dimension(32, 30));
+        buttonPrevQuery.setText("<");
+        buttonPrevQuery.setVerticalAlignment(0);
+        buttonPrevQuery.putClientProperty("hideActionText", Boolean.TRUE);
+        panel12.add(buttonPrevQuery);
+        buttonNextQuery = new JButton();
+        buttonNextQuery.setFocusPainted(true);
+        buttonNextQuery.setHorizontalTextPosition(0);
+        buttonNextQuery.setMaximumSize(new Dimension(32, 30));
+        buttonNextQuery.setMinimumSize(new Dimension(32, 30));
+        buttonNextQuery.setOpaque(false);
+        buttonNextQuery.setPreferredSize(new Dimension(32, 30));
+        buttonNextQuery.setText(">");
+        buttonNextQuery.setVerticalTextPosition(0);
+        panel12.add(buttonNextQuery);
+        buttonDeleteQuery = new JButton();
+        buttonDeleteQuery.setText("Delete");
+        panel11.add(buttonDeleteQuery, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel13 = new JPanel();
+        panel13.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel13.setName("tabPanelLogsTab");
+        tabPanelOperations.addTab("Logs", panel13);
+        final JScrollPane scrollPane4 = new JScrollPane();
+        scrollPane4.setName("scrollpaneLogs");
+        panel13.add(scrollPane4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        textAreaLogs = new JTextArea();
+        scrollPane4.setViewportView(textAreaLogs);
+        final JPanel panel14 = new JPanel();
+        panel14.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel13.add(panel14, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonClearLogs = new JButton();
+        buttonClearLogs.setText("Clear");
+        panel14.add(buttonClearLogs, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer6 = new Spacer();
+        panel14.add(spacer6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        checkBoxLogsWordWrap = new JCheckBox();
+        checkBoxLogsWordWrap.setLabel("Word Wrap");
+        checkBoxLogsWordWrap.setText("Word Wrap");
+        panel14.add(checkBoxLogsWordWrap, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    public JComponent $$$getRootComponent$$$() {
+        return panel;
+    }
+
 }
