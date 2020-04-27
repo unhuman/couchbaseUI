@@ -32,24 +32,25 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.desktop.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.*;
 
 import static com.unhuman.couchbaseui.utils.Utilities.trimString;
-import static java.awt.SystemColor.menu;
 
-public class CouchbaseUI {
+public class CouchbaseUI implements AboutHandler, QuitHandler {
     private static final Color DARK_RED = new Color(128, 0, 0);
     private static final Color DARK_GREEN = new Color(0, 76, 0);
     private static final String NO_EXPIRY_STRING = "No Expiry";
 
     private final CouchbaseClientManager couchbase;
     private final ObjectWriter prettyPrintingWriter;
-    private CouchbaseUIConfig config;
+    private volatile CouchbaseUIConfig config;
     private int currentQuery;
 
     // UI created by IntelliJ
@@ -105,12 +106,18 @@ public class CouchbaseUI {
 
     private MemoryHandler2 memoryHandler;
 
+    private AtomicBoolean isAboutDialogDisplayed;
+    private boolean isConfigurationAlreadySaved;
+
+
     // TODO: Fix expiry tracking
     // private Duration currentExpiry;
 
     public CouchbaseUI() {
         // Create and deflect logs
         memoryHandler = new MemoryHandler2();
+        isAboutDialogDisplayed = new AtomicBoolean(false);
+        isConfigurationAlreadySaved = false;
 
         // set simple default log levels
         adjustLogLevel("com.unhuman", Level.INFO);
@@ -362,7 +369,7 @@ public class CouchbaseUI {
         buttonAbout.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                AboutDialog.display(panel);
+                displayAboutDialog();
             }
         });
         buttonSettings.addActionListener(new ActionListener() {
@@ -602,15 +609,22 @@ public class CouchbaseUI {
         updateStatusText("");
     }
 
-    protected void saveConfig(JFrame frame) {
-        try {
-            frame.setEnabled(false);
-            updateStatusText("Saving configuration...");
-            ConfigFileManager.SaveConfig(config);
-        } catch (Exception e) {
-            updateStatusText(e);
-        } finally {
-            frame.setEnabled(true);
+    protected synchronized void saveConfig(JFrame frame) {
+        if (!isConfigurationAlreadySaved) {
+            isConfigurationAlreadySaved = true;
+
+            if (config != null) {
+                try {
+                    frame.setEnabled(false);
+                    updateStatusText("Saving configuration...");
+                    ConfigFileManager.SaveConfig(config);
+                    updateStatusText("Configuration saved.");
+                } catch (Exception e) {
+                    updateStatusText(e);
+                } finally {
+                    frame.setEnabled(true);
+                }
+            }
         }
     }
 
@@ -823,7 +837,33 @@ public class CouchbaseUI {
         }
     }
 
+    @Override
+    public void handleAbout(AboutEvent e) {
+        displayAboutDialog();
+    }
+
+    private void displayAboutDialog() {
+        if (isAboutDialogDisplayed.compareAndSet(false, true)) {
+            AboutDialog.display(panel);
+            isAboutDialogDisplayed.set(false);
+        }
+    }
+
+    @Override
+    public void handleQuitRequestWith(QuitEvent e, QuitResponse response) {
+        saveConfig((JFrame) SwingUtilities.getWindowAncestor(panel));
+        response.performQuit();
+    }
+
     public static void main(String[] args) {
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "couchbaseUI");
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            // ignore any problems here
+        }
+
         CouchbaseUI couchbaseUI = new CouchbaseUI();
 
         JFrame frame = new JFrame("CouchbaseUI");
@@ -843,6 +883,9 @@ public class CouchbaseUI {
                 couchbaseUI.saveConfig(frame);
             }
         });
+
+        Desktop.getDesktop().setAboutHandler(couchbaseUI);
+        Desktop.getDesktop().setQuitHandler(couchbaseUI);
 
         frame.setVisible(true);
 
@@ -1124,5 +1167,4 @@ public class CouchbaseUI {
     public JComponent $$$getRootComponent$$$() {
         return panel;
     }
-
 }
