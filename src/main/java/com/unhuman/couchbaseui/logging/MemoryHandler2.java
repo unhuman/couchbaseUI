@@ -32,8 +32,30 @@ public class MemoryHandler2 extends Handler {
 
     @Override
     public void publish(LogRecord record) {
+        // handle log levels
+        if (record.getLoggerName().startsWith("com.couchbase")
+                && record.getLevel().intValue() < configuration.getCouchbaseClientLogLevel().intValue()) {
+            return;
+        }
+        if (record.getLoggerName().startsWith("com.unhuman")
+                && record.getLevel().intValue() < configuration.getCouchbaseUILogLevel().intValue()) {
+            return;
+        }
+
+        StringBuilder messageBuilder = new StringBuilder(record.getMessage().length() + 256);
+        messageBuilder.append(LOG_DATE_FORMAT.format(new Date()));
+        messageBuilder.append(" - ");
+        messageBuilder.append(record.getLevel());
+        messageBuilder.append(": ");
+        if (!record.getMessage().contains(record.getLoggerName())) {
+            messageBuilder.append(record.getLoggerName());
+            messageBuilder.append(" - ");
+        }
+        messageBuilder.append(record.getMessage());
+        String message = messageBuilder.toString();
+
         synchronized (messages) {
-            messages.add(LOG_DATE_FORMAT.format(new Date()) + " - " + record.getLevel() + ": " + record.getMessage());
+            messages.add(message);
             if (configuration != null && messages.size() > configuration.getLogHistorySize()) {
                 this.messages.subList(0, messages.size() - configuration.getLogHistorySize()).clear();
             }

@@ -1,4 +1,4 @@
-# couchbaseUI
+# CouchbaseUI
 Simple UI to manipulate Couchbase documents and indexes.
 
 Note this has to be built with Java 8 and no Lambda expressions.

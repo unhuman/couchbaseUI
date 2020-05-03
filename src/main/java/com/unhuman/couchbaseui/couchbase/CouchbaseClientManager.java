@@ -26,10 +26,11 @@ import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 
 public class CouchbaseClientManager {
     private static final String CLUSTER_MAP_ENDPOINT = "/pools/nodes";
+    public static final String CLUSTER_MAP_NODES = "nodes";
+    public static final String CLUSTER_MAP_SERVICES = "services";
     private static final String CLUSTER_MAP_KV_SERVICE = "kv";
-    private static final String CLUSTER_MAP_HOSTNAME = "hostname";
-    private static final String CLUSTER_MAP_NODES = "nodes";
-    private static final String CLUSTER_MAP_SERVICES = "services";
+    public static final String CLUSTER_MAP_HOSTNAME = "hostname";
+
 
     Map<ClusterConnection, Cluster> connectedClusters;
 
@@ -57,19 +58,10 @@ public class CouchbaseClientManager {
             return connectedClusters.get(clusterConnection);
         }
 
-        // connect to get the cluster map
-        Resty restHandler = new Resty();
-        // the build in authentication doesn't work as expected, so we add our own header
-        //restHandler.authenticate("http://" + cluster, user, password);
-        restHandler.withHeader("Authorization", clusterConnection.getEncodedBasicCredentials());
-        restHandler.withHeader("Accept", "application/json");
+        JSONObject responseContents = getClusterInfo(clusterConnection);
 
-        // TODO: Support other protocols, cleanup
-        JSONResource resource =
-                restHandler.json("http://" + clusterConnection.getHost() + ":8091" + CLUSTER_MAP_ENDPOINT);
-        JSONObject responseContents = resource.object();
-
-        if (AlertsDialog.display(parentComponent, (JSONArray) responseContents.get("alerts"))) {
+        if (AlertsDialog.display(parentComponent, responseContents.getJSONArray("alerts"))) {
+            Resty restHandler = new Resty();
             JSONResource clearResource = restHandler.json(
                     "http://" + clusterConnection.getHost() + ":8091" + responseContents.get("alertsSilenceURL"));
         }
@@ -84,17 +76,47 @@ public class CouchbaseClientManager {
         return cluster;
     }
 
+    public static JSONObject getClusterInfo(ClusterConnection clusterConnection) throws IOException, JSONException {
+        // connect to get the cluster map
+        Resty restHandler = new Resty();
+        // the build in authentication doesn't work as expected, so we add our own header
+        //restHandler.authenticate("http://" + cluster, user, password);
+        restHandler.withHeader("Authorization", clusterConnection.getEncodedBasicCredentials());
+        restHandler.withHeader("Accept", "application/json");
+
+        // TODO: Support other protocols, cleanup
+        JSONResource resource =
+                restHandler.json("http://" + clusterConnection.getHost() + ":8091" + CLUSTER_MAP_ENDPOINT);
+        JSONObject responseContents = resource.object();
+        return responseContents;
+    }
+
+    public static JSONArray getBucketInfo(ClusterConnection clusterConnection, String bucketEndpoint)
+            throws IOException, JSONException {
+        // connect to get the cluster map
+        Resty restHandler = new Resty();
+        // the build in authentication doesn't work as expected, so we add our own header
+        //restHandler.authenticate("http://" + cluster, user, password);
+        restHandler.withHeader("Authorization", clusterConnection.getEncodedBasicCredentials());
+        restHandler.withHeader("Accept", "application/json");
+
+        // TODO: Support other protocols, cleanup
+        JSONResource resource =
+                restHandler.json("http://" + clusterConnection.getHost() + ":8091" + bucketEndpoint);
+        JSONArray responseContents = resource.array();
+        return responseContents;
+    }
+
     private List<String> getKVNodes(JSONObject couchbaseConfig) throws JSONException {
         JSONArray nodes = couchbaseConfig.getJSONArray(CLUSTER_MAP_NODES);
-
         List<String> kvNodes = new ArrayList<>(nodes.length());
 
         for (int i = 0; i < nodes.length(); i++) {
-            JSONObject node = (JSONObject)nodes.get(i);
+            JSONObject node = nodes.getJSONObject(i);
             JSONArray services = node.getJSONArray(CLUSTER_MAP_SERVICES);
             for (int j = 0; j < services.length(); j++) {
                 if (services.get(j).equals(CLUSTER_MAP_KV_SERVICE)) {
-                    String nodeHost = (String) node.get(CLUSTER_MAP_HOSTNAME);
+                    String nodeHost = node.getString(CLUSTER_MAP_HOSTNAME);
                     kvNodes.add(nodeHost.split(":")[0]);
                     break;
                 }

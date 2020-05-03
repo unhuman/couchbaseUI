@@ -25,25 +25,32 @@ import com.unhuman.couchbaseui.entities.ClusterConnection;
 import com.unhuman.couchbaseui.exceptions.BadInputException;
 import com.unhuman.couchbaseui.logging.MemoryHandler2;
 import com.unhuman.couchbaseui.utils.Utilities;
+import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.awt.desktop.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.*;
 
+import static com.unhuman.couchbaseui.couchbase.CouchbaseClientManager.*;
 import static com.unhuman.couchbaseui.utils.Utilities.trimString;
 
 public class CouchbaseUI implements AboutHandler, QuitHandler {
+    private static final Logger LOG = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
     private static final Color DARK_RED = new Color(128, 0, 0);
     private static final Color DARK_GREEN = new Color(0, 76, 0);
     private static final String NO_EXPIRY_STRING = "No Expiry";
@@ -95,6 +102,9 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
     private JTextArea textAreaLogs;
     private JButton buttonClearLogs;
     private JCheckBox checkBoxLogsWordWrap;
+    private JTextPane textPaneInfo;
+    private JPanel tabLogs;
+    private JPanel tabInfo;
 
     private final Color textStatusDisabledTextColor;
     private final Color textStatusBgColor;
@@ -144,6 +154,21 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
         comboBoxTTLDurationType.addItem(ChronoUnit.DAYS);
         comboBoxTTLDurationType.addItem(ChronoUnit.YEARS);
         comboBoxTTLDurationType.addItem(NO_EXPIRY_STRING);
+
+        textPaneInfo.setContentType("text/html");
+
+        textPaneInfo.addHyperlinkListener(new HyperlinkListener() {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                    try {
+                        Desktop.getDesktop().browse(e.getURL().toURI());
+                    } catch (Exception exception) {
+                        LOG.log(Level.SEVERE, "Could not open link: " + e.getURL().toString(), e);
+                    }
+                }
+            }
+        });
 
         /** Set up all the listeners */
 
@@ -211,8 +236,6 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
                 }
             }
         });
-
-
 
         // Setup KV Update Document button
         updateButton.addActionListener(new ActionListener() {
@@ -412,26 +435,30 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
         });
         tabPanelOperations.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
-                if ("Logs".equals(tabPanelOperations.getTitleAt(tabPanelOperations.getSelectedIndex()))) {
-                    textAreaLogs.removeAll();
-                    textAreaLogs.setText(String.join("\n", memoryHandler.getMessages()));
-                    checkBoxLogsWordWrap.setSelected(config.isLogsWordWrap());
-                    textAreaLogs.setLineWrap(config.isLogsWordWrap());
+                switch (tabPanelOperations.getTitleAt(tabPanelOperations.getSelectedIndex())) {
+                    case "Logs":
+                        textAreaLogs.removeAll();
+                        textAreaLogs.setText(String.join("\n", memoryHandler.getMessages()));
+                        checkBoxLogsWordWrap.setSelected(config.isLogsWordWrap());
+                        textAreaLogs.setLineWrap(config.isLogsWordWrap());
 
-                    // Display the bottom left of the logs (varies if low wrap or not)
-                    int forceShowIndex;
-                    if (config.isLogsWordWrap()) {
-                        forceShowIndex = textAreaLogs.getText().length();
-                    } else {
-                        forceShowIndex = textAreaLogs.getText().lastIndexOf('\n');
-                        if (forceShowIndex > 0) {
-                            forceShowIndex = forceShowIndex + 1;
+                        // Display the bottom left of the logs (varies if low wrap or not)
+                        int forceShowIndex;
+                        if (config.isLogsWordWrap()) {
+                            forceShowIndex = textAreaLogs.getText().length();
+                        } else {
+                            forceShowIndex = textAreaLogs.getText().lastIndexOf('\n');
+                            if (forceShowIndex > 0) {
+                                forceShowIndex = forceShowIndex + 1;
+                            } else {
+                                forceShowIndex = 0;
+                            }
                         }
-                    }
-
-                    if (forceShowIndex > 0) {
                         textAreaLogs.setCaretPosition(forceShowIndex);
-                    }
+                        break;
+                    case "Info":
+                        populateInfo();
+                        break;
                 }
             }
         });
@@ -617,6 +644,7 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
                 try {
                     frame.setEnabled(false);
                     updateStatusText("Saving configuration...");
+
                     ConfigFileManager.SaveConfig(config);
                     updateStatusText("Configuration saved.");
                 } catch (Exception e) {
@@ -699,6 +727,7 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
     }
 
     protected void updateStatusSuccess(String message) {
+        LOG.log(Level.INFO, message);
         updateStatusText(DARK_GREEN, textStatusBgColor, message);
     }
 
@@ -709,12 +738,95 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
         }
 
         if (exception instanceof DocumentNotFoundException) {
+            LOG.log(Level.WARNING, exception.toString());
             updateStatusText(Color.BLACK, Color.YELLOW, exceptionText);
         } else {
+            LOG.log(Level.SEVERE, exception.toString());
             // Clean off the package from the exception text
-            exceptionText = exceptionText.replaceFirst("([^:])*\\.", "");
-            updateStatusText(Color.WHITE, DARK_RED, exceptionText);
+            String cleanExceptionText = exceptionText.replaceFirst("([^:])*\\.", "");
+            cleanExceptionText = (cleanExceptionText.isEmpty()) ? exceptionText : cleanExceptionText;
+            updateStatusText(Color.WHITE, DARK_RED, cleanExceptionText);
         }
+    }
+
+    private void populateInfo() {
+        updateStatusText("Loading information...");
+        ClusterConnection clusterConnection = createClusterConfig();
+        try {
+            panel.getParent().setEnabled(false);
+            JSONObject clusterInfo = CouchbaseClientManager.getClusterInfo(clusterConnection);
+            StringBuilder htmlBuilder = new StringBuilder(2048);
+
+            htmlBuilder.append("<html><head>");
+            htmlBuilder.append("<style>table, th, td { border: 1px solid black; } </style>");
+            htmlBuilder.append("</head><body>");
+            htmlBuilder.append("<h3>Cluster Name: ").append(clusterInfo.getString("clusterName")).append("</h3>");
+
+            htmlBuilder.append("<h3>Nodes:</h3>");
+            htmlBuilder.append("<table>");
+            JSONArray nodes = clusterInfo.getJSONArray(CLUSTER_MAP_NODES);
+
+            htmlBuilder.append("<tr>");
+            htmlBuilder.append("<th align=\"left\">Node</th>");
+            htmlBuilder.append("<th align=\"left\">Services</th>");
+            htmlBuilder.append("<th align=\"left\">CPU</th>");
+            htmlBuilder.append("<th align=\"left\">CB Version</th>");
+            htmlBuilder.append("</tr>");
+
+            for (int i = 0; i < nodes.length(); i++) {
+                htmlBuilder.append("<tr>");
+                JSONObject node = nodes.getJSONObject(i);
+
+                // generate link to node
+                String nodeHost = node.getString(CLUSTER_MAP_HOSTNAME);
+                String[] nodeParts = nodeHost.split(":");
+                String url = (("8091".equals(nodeParts[1])) ? "http://" : "https://") + nodeHost;
+                appendTableDataValue(htmlBuilder, String.format("<a href=\"%s\">%s</a>", url, nodeParts[0]));
+                // append services
+                JSONArray services = (JSONArray) node.get("services");
+                appendTableDataValue(htmlBuilder, services.join("<br/>").replaceAll("\\\"", ""));
+                // append CPU
+                long cpu = Math.round(node.getJSONObject("systemStats").getDouble("cpu_utilization_rate"));
+                appendTableDataValue(htmlBuilder, cpu);
+                appendTableDataValue(htmlBuilder, node.getString("version"));
+
+                htmlBuilder.append("</tr>");
+            }
+            htmlBuilder.append("</table>");
+
+            // Buckets info
+            htmlBuilder.append("<h3>Buckets:</h3>");
+            htmlBuilder.append("<table>");
+            htmlBuilder.append("<tr>");
+            htmlBuilder.append("<th align=\"left\">Bucket</th>");
+            htmlBuilder.append("<th align=\"left\">Count</th>");
+            htmlBuilder.append("</tr>");
+
+            JSONArray buckets = CouchbaseClientManager.getBucketInfo(clusterConnection,
+                    clusterInfo.getJSONObject("buckets").getString("uri"));
+            for (int i = 0; i < buckets.length(); i++) {
+                htmlBuilder.append("<tr>");
+                JSONObject bucket = buckets.getJSONObject(i);
+                appendTableDataValue(htmlBuilder, bucket.getString("name"));
+                appendTableDataValue(htmlBuilder, bucket.getJSONObject("basicStats").getString("itemCount"));
+                htmlBuilder.append("</tr>");
+            }
+            htmlBuilder.append("</table>");
+
+            htmlBuilder.append("</body></html>");
+            textPaneInfo.setText(htmlBuilder.toString());
+            textPaneInfo.setCaretPosition(0);
+
+            updateStatusText("");
+        } catch (Exception e) {
+            updateStatusText(e);
+        } finally {
+            panel.getParent().setEnabled(true);
+        }
+    }
+
+    private static void appendTableDataValue(StringBuilder stringBuilder, Object fieldValue) {
+        stringBuilder.append("<td>").append(fieldValue).append("</td>");
     }
 
     private void updateStatusText(Color disabledTextColor, Color background, String message) {
@@ -1138,27 +1250,35 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
         buttonDeleteQuery = new JButton();
         buttonDeleteQuery.setText("Delete");
         panel11.add(buttonDeleteQuery, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel13 = new JPanel();
-        panel13.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel13.setName("tabPanelLogsTab");
-        tabPanelOperations.addTab("Logs", panel13);
+        tabInfo = new JPanel();
+        tabInfo.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabPanelOperations.addTab("Info", tabInfo);
         final JScrollPane scrollPane4 = new JScrollPane();
-        scrollPane4.setName("scrollpaneLogs");
-        panel13.add(scrollPane4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        tabInfo.add(scrollPane4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        textPaneInfo = new JTextPane();
+        textPaneInfo.setEditable(false);
+        scrollPane4.setViewportView(textPaneInfo);
+        tabLogs = new JPanel();
+        tabLogs.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabLogs.setName("tabPanelLogsTab");
+        tabPanelOperations.addTab("Logs", tabLogs);
+        final JScrollPane scrollPane5 = new JScrollPane();
+        scrollPane5.setName("scrollpaneLogs");
+        tabLogs.add(scrollPane5, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         textAreaLogs = new JTextArea();
-        scrollPane4.setViewportView(textAreaLogs);
-        final JPanel panel14 = new JPanel();
-        panel14.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        panel13.add(panel14, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        scrollPane5.setViewportView(textAreaLogs);
+        final JPanel panel13 = new JPanel();
+        panel13.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        tabLogs.add(panel13, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         buttonClearLogs = new JButton();
         buttonClearLogs.setText("Clear");
-        panel14.add(buttonClearLogs, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel13.add(buttonClearLogs, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer6 = new Spacer();
-        panel14.add(spacer6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel13.add(spacer6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         checkBoxLogsWordWrap = new JCheckBox();
         checkBoxLogsWordWrap.setLabel("Word Wrap");
         checkBoxLogsWordWrap.setText("Word Wrap");
-        panel14.add(checkBoxLogsWordWrap, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel13.add(checkBoxLogsWordWrap, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
@@ -1167,4 +1287,5 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
     public JComponent $$$getRootComponent$$$() {
         return panel;
     }
+
 }
