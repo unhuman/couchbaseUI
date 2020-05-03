@@ -31,7 +31,6 @@ public class CouchbaseClientManager {
     private static final String CLUSTER_MAP_KV_SERVICE = "kv";
     public static final String CLUSTER_MAP_HOSTNAME = "hostname";
 
-
     Map<ClusterConnection, Cluster> connectedClusters;
 
     public CouchbaseClientManager() {
@@ -74,6 +73,13 @@ public class CouchbaseClientManager {
         Cluster cluster = Cluster.connect(kvNodes.get(0), clusterOptions);
         connectedClusters.put(clusterConnection, cluster);
         return cluster;
+    }
+
+    public void disconnect(Component parentComponent, ClusterConnection clusterConnection)
+            throws IOException, JSONException {
+        Cluster cluster = getCluster(parentComponent, clusterConnection);
+        connectedClusters.entrySet().removeIf(entry -> (entry.getValue().equals(cluster)));
+        cluster.disconnect();
     }
 
     public static JSONObject getClusterInfo(ClusterConnection clusterConnection) throws IOException, JSONException {

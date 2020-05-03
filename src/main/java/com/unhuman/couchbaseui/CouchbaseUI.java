@@ -7,10 +7,12 @@ import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.ObjectWrite
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.SerializationFeature;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.core.error.FeatureNotAvailableException;
+import com.couchbase.client.core.retry.FailFastRetryStrategy;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.*;
+import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryResult;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -191,7 +193,9 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
                     String documentKey = trimString(textfieldDocumentKey.getText());
                     JsonNode convertedObject = JacksonTransformers.MAPPER.readTree(textareaValue.getText());
                     Duration expiryDuration = calculateExpiry();
-                    InsertOptions insertOptions = InsertOptions.insertOptions().expiry(expiryDuration);
+                    InsertOptions insertOptions = InsertOptions.insertOptions()
+                            .expiry(expiryDuration)
+                            .retryStrategy(FailFastRetryStrategy.INSTANCE);
                     MutationResult result = collection.insert(documentKey, convertedObject, insertOptions);
                     currentCAS = result.cas();
 
@@ -218,7 +222,9 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
                     updateStatusTextProcessing();
 
                     String documentKey = trimString(textfieldDocumentKey.getText());
-                    GetResult result = collection.get(documentKey);
+                    GetOptions getOptions = GetOptions.getOptions()
+                            .retryStrategy(FailFastRetryStrategy.INSTANCE);
+                    GetResult result = collection.get(documentKey, getOptions);
                     textfieldMetadata.setText("CAS: " + result.cas() + " Expiry: " + result.expiry());
 
                     JsonObject resultContent = result.contentAsObject();
@@ -259,7 +265,8 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
                     Duration expiry = calculateExpiry();
                     ReplaceOptions replaceOptions = ReplaceOptions.replaceOptions()
                             .cas(currentCAS)
-                            .expiry(expiry);
+                            .expiry(expiry)
+                            .retryStrategy(FailFastRetryStrategy.INSTANCE);
 
                     JsonNode convertedObject = JacksonTransformers.MAPPER.readTree(textareaValue.getText());
 
@@ -287,7 +294,8 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
 
                     String documentKey = trimString(textfieldDocumentKey.getText());
                     RemoveOptions removeOptions = RemoveOptions.removeOptions()
-                            .cas(currentCAS);
+                            .cas(currentCAS)
+                            .retryStrategy(FailFastRetryStrategy.INSTANCE);
                     collection.remove(documentKey, removeOptions);
 
                     textareaValue.setText("");
@@ -315,8 +323,11 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
 
                     updateStatusTextProcessing();
 
+                    QueryOptions queryOptions = QueryOptions.queryOptions()
+                            .retryStrategy(FailFastRetryStrategy.INSTANCE);
+
                     String query = trimString(textareaQuery.getText());
-                    QueryResult result = couchbase.getCluster(panel, clusterConnection).query(query);
+                    QueryResult result = couchbase.getCluster(panel, clusterConnection).query(query, queryOptions);
                     result.metaData();
 
                     // Get the results as pretty-printed content
@@ -492,9 +503,15 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
             deleteCurrentCollection();
         }
 
-        if (exceptionText.contains("BUCKET_NOT_AVAILABLE")) {
-            // this is when the bucket doesn't exist
+        // TODO: when connecting to an invalid bucket, everything goes haywire.
+        if (exceptionText.contains("BUCKET_NOT_AVAILABLE") || exceptionText.contains("BUCKET_OPEN_IN_PROGRESS")) {
             deleteCurrentBucket();
+            ClusterConnection clusterConnection = createClusterConfig();
+            try {
+                couchbase.disconnect(panel, clusterConnection);
+            } catch (Exception e2) {
+                LOG.log(Level.SEVERE, e2.toString());
+            }
         }
 
         textareaValue.setText("");
