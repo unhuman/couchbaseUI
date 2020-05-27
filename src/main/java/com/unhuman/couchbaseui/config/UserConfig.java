@@ -13,14 +13,37 @@ public class UserConfig extends EncryptedConfigItem {
     private Map<String, List<String>> bucketsCollections;
     private List<String> queries;
 
+    // users that haven't been validated should not be serialized when saving.
+    @JsonIgnore
+    private boolean validated;
+
     @Encrypt
     private String password;
 
-    UserConfig() {
+    private UserConfig() {
+        // When deserializing, this is set to true
+        this.validated = true;
         bucketsCollections = new HashMap<>();
         queries = new ArrayList<>();
 
         password = "";
+    }
+
+    public static UserConfig createNewUserConfig() {
+        UserConfig userConfig = new UserConfig();
+        // override that this is not validated yet
+        userConfig.setValidated(false);
+        return userConfig;
+    }
+
+    @JsonIgnore
+    public boolean isValidated() {
+        return validated;
+    }
+
+    @JsonIgnore
+    public void setValidated(boolean validated) {
+        this.validated = validated;
     }
 
     public void setPassword(Object password) {

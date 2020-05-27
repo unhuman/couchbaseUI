@@ -746,6 +746,8 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
     protected void updateStatusSuccess(String message) {
         LOG.log(Level.INFO, message);
         updateStatusText(DARK_GREEN, textStatusBgColor, message);
+
+        flagCurrentUserValid();
     }
 
     protected void updateStatusText(Exception exception) {
@@ -757,12 +759,30 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
         if (exception instanceof DocumentNotFoundException) {
             LOG.log(Level.WARNING, exception.toString());
             updateStatusText(Color.BLACK, Color.YELLOW, exceptionText);
+            flagCurrentUserValid();
         } else {
             LOG.log(Level.SEVERE, exception.toString());
             // Clean off the package from the exception text
             String cleanExceptionText = exceptionText.replaceFirst("([^:])*\\.", "");
             cleanExceptionText = (cleanExceptionText.isEmpty()) ? exceptionText : cleanExceptionText;
             updateStatusText(Color.WHITE, DARK_RED, cleanExceptionText);
+
+            // Remove the user from config if it was not validated
+            if (config.getClusterConfig(getSelectedText(comboClusterPicker)) != null
+                    && !config.getClusterConfig(getSelectedText(comboClusterPicker))
+                    .getUserConfig(getSelectedText(comboboxUser)).isValidated()) {
+                config.getClusterConfig(getSelectedText(comboClusterPicker))
+                        .removeUser(getSelectedText(comboboxUser));
+            }
+        }
+    }
+
+    private void flagCurrentUserValid() {
+        if (config.getClusterConfig(getSelectedText(comboClusterPicker)) != null
+                && config.getClusterConfig(getSelectedText(comboClusterPicker))
+                .getUserConfig(getSelectedText(comboboxUser)) != null) {
+            config.getClusterConfig(getSelectedText(comboClusterPicker))
+                    .getUserConfig(getSelectedText(comboboxUser)).setValidated(true);
         }
     }
 

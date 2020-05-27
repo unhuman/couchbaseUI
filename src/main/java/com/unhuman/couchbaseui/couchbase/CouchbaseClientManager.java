@@ -1,10 +1,12 @@
 package com.unhuman.couchbaseui.couchbase;
 
 import com.couchbase.client.core.env.PasswordAuthenticator;
+import com.couchbase.client.core.retry.FailFastRetryStrategy;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.unhuman.couchbaseui.AlertsDialog;
 import com.unhuman.couchbaseui.entities.BucketCollection;
 import com.unhuman.couchbaseui.entities.ClusterConnection;
@@ -17,6 +19,7 @@ import us.monoid.web.Resty;
 
 import java.awt.Component;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +33,8 @@ public class CouchbaseClientManager {
     public static final String CLUSTER_MAP_SERVICES = "services";
     private static final String CLUSTER_MAP_KV_SERVICE = "kv";
     public static final String CLUSTER_MAP_HOSTNAME = "hostname";
+
+    private static final Duration WAIT_UNTIL_READY_DURATION = Duration.ofSeconds(5);
 
     Map<ClusterConnection, Cluster> connectedClusters;
 
@@ -45,6 +50,7 @@ public class CouchbaseClientManager {
         }
 
         Bucket bucket = getCluster(parentComponent, clusterConnection).bucket(bucketCollection.getBucketName());
+        bucket.waitUntilReady(WAIT_UNTIL_READY_DURATION);
         return (bucketCollection.hasCollectionName())
                 ? bucket.collection(bucketCollection.getCollectionName())
                 : bucket.defaultCollection();
@@ -68,9 +74,15 @@ public class CouchbaseClientManager {
         List<String> kvNodes = getKVNodes(responseContents);
 
         // connect to the cluster (right now, it just picks first item out of cluster map)
+        ClusterEnvironment environment = ClusterEnvironment.builder()
+                .retryStrategy(FailFastRetryStrategy.INSTANCE)
+                .build();
         ClusterOptions clusterOptions =
-                clusterOptions(PasswordAuthenticator.create(clusterConnection.getUser(), clusterConnection.getPassword()));
+                clusterOptions(PasswordAuthenticator
+                        .create(clusterConnection.getUser(), clusterConnection.getPassword()))
+                .environment(environment);
         Cluster cluster = Cluster.connect(kvNodes.get(0), clusterOptions);
+        cluster.waitUntilReady(WAIT_UNTIL_READY_DURATION);
         connectedClusters.put(clusterConnection, cluster);
         return cluster;
     }
@@ -93,6 +105,7 @@ public class CouchbaseClientManager {
         // TODO: Support other protocols, cleanup
         JSONResource resource =
                 restHandler.json("http://" + clusterConnection.getHost() + ":8091" + CLUSTER_MAP_ENDPOINT);
+
         JSONObject responseContents = resource.object();
         return responseContents;
     }

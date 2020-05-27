@@ -69,6 +69,16 @@ public class ConfigFileManager {
     }
 
     public static void SaveConfig(CouchbaseUIConfig config) throws Exception {
+        // Remove users that have not been used successfully
+        config.getServerHostnames().stream().forEach(serverHostname -> {
+            ClusterConfig clusterConfig = config.getClusterConfig(serverHostname);
+            clusterConfig.getUsers().stream().forEach(user -> {
+                if (!clusterConfig.getUserConfig(user).isValidated()) {
+                    clusterConfig.removeUser(user);
+                }
+            });
+        });
+
         File file = getConfigFile();
         EncryptedConfigItem.SetPermitLossOfEncryptedValues(config.getSecret() == null);
         GetObjectMapper(config.getSecret()).writerWithDefaultPrettyPrinter().writeValue(file, config);

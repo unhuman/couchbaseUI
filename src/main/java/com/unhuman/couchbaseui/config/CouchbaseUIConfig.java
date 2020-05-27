@@ -134,7 +134,7 @@ public class CouchbaseUIConfig {
      */
     public void upsertServer(ClusterConnection clusterConnection, BucketCollection bucketCollection) {
         if (!this.clusters.containsKey(clusterConnection.getHost())) {
-            UserConfig userConfig = new UserConfig();
+            UserConfig userConfig = UserConfig.createNewUserConfig();
             userConfig.upsertBucketCollection(bucketCollection.getBucketName(), bucketCollection.getCollectionName());
             userConfig.setPassword(clusterConnection.getPassword());
 
@@ -158,7 +158,7 @@ public class CouchbaseUIConfig {
      */
     public void upsertServer(ClusterConnection clusterConnection, String query) {
         if (!this.clusters.containsKey(clusterConnection.getHost())) {
-            UserConfig userConfig = new UserConfig();
+            UserConfig userConfig = UserConfig.createNewUserConfig();
             userConfig.upsertQuery(n1QLQueryRefreshHandling, query);
 
             ClusterConfig clusterConfig = new ClusterConfig();

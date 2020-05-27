@@ -41,7 +41,8 @@ public class ClusterConfig {
         }
 
         if (!userConfigs.containsKey(user)) {
-            UserConfig newConfig = new UserConfig();
+            // Create user as non-validated
+            UserConfig newConfig = UserConfig.createNewUserConfig();
             userConfigs.put(user, newConfig);
         }
         return userConfigs.get(user);
