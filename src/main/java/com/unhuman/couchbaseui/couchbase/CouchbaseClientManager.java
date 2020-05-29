@@ -1,6 +1,7 @@
 package com.unhuman.couchbaseui.couchbase;
 
 import com.couchbase.client.core.env.PasswordAuthenticator;
+import com.couchbase.client.core.env.SaslMechanism;
 import com.couchbase.client.core.retry.FailFastRetryStrategy;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
@@ -21,6 +22,7 @@ import java.awt.Component;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,10 +79,18 @@ public class CouchbaseClientManager {
         ClusterEnvironment environment = ClusterEnvironment.builder()
                 .retryStrategy(FailFastRetryStrategy.INSTANCE)
                 .build();
+
+        PasswordAuthenticator.Builder passwordAuthenticatorBuilder = PasswordAuthenticator.builder()
+                .username(clusterConnection.getUser())
+                .password(clusterConnection.getPassword());
+        // Workaround for: https://issues.couchbase.com/browse/JVMCBC-528
+        if ("Administrator".equals(clusterConnection.getUser())) {
+            passwordAuthenticatorBuilder.allowedSaslMechanisms(Collections.singleton(SaslMechanism.PLAIN));
+        }
+
         ClusterOptions clusterOptions =
-                clusterOptions(PasswordAuthenticator
-                        .create(clusterConnection.getUser(), clusterConnection.getPassword()))
-                .environment(environment);
+                clusterOptions(passwordAuthenticatorBuilder.build())
+                        .environment(environment);
         Cluster cluster = Cluster.connect(kvNodes.get(0), clusterOptions);
         cluster.waitUntilReady(WAIT_UNTIL_READY_DURATION);
         connectedClusters.put(clusterConnection, cluster);
