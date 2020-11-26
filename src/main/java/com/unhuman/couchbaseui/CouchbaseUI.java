@@ -1033,8 +1033,12 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
             }
         });
 
-        Desktop.getDesktop().setAboutHandler(couchbaseUI);
-        Desktop.getDesktop().setQuitHandler(couchbaseUI);
+        // Some functionality is only for Mac
+        try {
+            Desktop.getDesktop().setAboutHandler(couchbaseUI);
+            Desktop.getDesktop().setQuitHandler(couchbaseUI);
+        } catch (Exception e) {
+        }
 
         frame.setVisible(true);
 
