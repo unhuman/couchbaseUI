@@ -45,7 +45,7 @@ public class SecretDialog extends JDialog {
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                onCancel();
+                onClose();
             }
         });
 
@@ -76,6 +76,11 @@ public class SecretDialog extends JDialog {
         }
         secretKeyContainer.set(null);
         dispose();
+    }
+
+    private void onClose() {
+        dispose();
+        System.exit(0);
     }
 
     public static void display(Component component, AtomicReference<String> passwordContainer) {
