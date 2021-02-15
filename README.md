@@ -15,3 +15,6 @@ Developer Notes:
 Earlier there were problems with making the build work properly with Java 11 and lambdas with the ideauidesigner-maven-plugin.
 This has been resolved by setting the IntelliJ GUI designer to output Java source code instead of Binary class files.
 
+![CouchbaseUI Main Screen](screenshots/couchbaseUIMain.png)
+![CouchbaseUI N1QL Screen](screenshots/couchbaseUIN1QL.png)
+![CouchbaseUI Info Screen](screenshots/couchbaseUIInfo.png)
