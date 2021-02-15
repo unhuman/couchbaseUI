@@ -2,7 +2,6 @@ package com.unhuman.couchbaseui;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.JsonNode;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.ObjectWriter;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.SerializationFeature;
 import com.couchbase.client.core.error.DocumentNotFoundException;
@@ -11,7 +10,12 @@ import com.couchbase.client.core.retry.FailFastRetryStrategy;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.kv.*;
+import com.couchbase.client.java.kv.GetOptions;
+import com.couchbase.client.java.kv.GetResult;
+import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.kv.MutationResult;
+import com.couchbase.client.java.kv.RemoveOptions;
+import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryResult;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -31,24 +35,58 @@ import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-import java.awt.*;
-import java.awt.desktop.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Desktop;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Insets;
+import java.awt.desktop.AboutEvent;
+import java.awt.desktop.AboutHandler;
+import java.awt.desktop.QuitEvent;
+import java.awt.desktop.QuitHandler;
+import java.awt.desktop.QuitResponse;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.*;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import static com.unhuman.couchbaseui.couchbase.CouchbaseClientManager.*;
+import static com.unhuman.couchbaseui.couchbase.CouchbaseClientManager.CLUSTER_MAP_HOSTNAME;
+import static com.unhuman.couchbaseui.couchbase.CouchbaseClientManager.CLUSTER_MAP_NODES;
 import static com.unhuman.couchbaseui.utils.Utilities.trimString;
 
 public class CouchbaseUI implements AboutHandler, QuitHandler {
@@ -191,7 +229,8 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
                     updateStatusTextProcessing();
 
                     String documentKey = trimString(textfieldDocumentKey.getText());
-                    JsonNode convertedObject = JacksonTransformers.MAPPER.readTree(textareaValue.getText());
+                    Map<String,Object> convertedObject =
+                            JacksonTransformers.MAPPER.readValue(textareaValue.getText(), HashMap.class);
                     Duration expiryDuration = calculateExpiry();
                     InsertOptions insertOptions = InsertOptions.insertOptions()
                             .expiry(expiryDuration)
@@ -268,8 +307,8 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
                             .expiry(expiry)
                             .retryStrategy(FailFastRetryStrategy.INSTANCE);
 
-                    JsonNode convertedObject = JacksonTransformers.MAPPER.readTree(textareaValue.getText());
-
+                    Map<String,Object> convertedObject =
+                            JacksonTransformers.MAPPER.readValue(textareaValue.getText(), HashMap.class);
                     MutationResult result = collection.replace(documentKey, convertedObject, replaceOptions);
                     currentCAS = result.cas();
 
