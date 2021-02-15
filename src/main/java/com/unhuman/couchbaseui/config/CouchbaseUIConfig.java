@@ -31,6 +31,8 @@ public class CouchbaseUIConfig {
 
     private Map<String, ClusterConfig> clusters;
 
+    private String lastCluster;
+
     private N1QLQueryRefreshHandling n1QLQueryRefreshHandling = N1QLQueryRefreshHandling.InPlace;
 
     private CouchbaseUIConfig() { } // for deserialization
@@ -148,6 +150,9 @@ public class CouchbaseUIConfig {
             userConfig.upsertBucketCollection(bucketCollection.getBucketName(), bucketCollection.getCollectionName());
             userConfig.setPassword(clusterConnection.getPassword());
         }
+
+        // set the last cluster used
+        this.setLastCluster(clusterConnection.getHost());
     }
 
     /**
@@ -174,6 +179,14 @@ public class CouchbaseUIConfig {
 
     public void removeCluster(String clusterName) {
         clusters.remove(clusterName);
+    }
+
+    public String getLastCluster() {
+        return lastCluster;
+    }
+
+    public void setLastCluster(String lastCluster) {
+        this.lastCluster = lastCluster;
     }
 
     public N1QLQueryRefreshHandling getN1QLQueryRefreshHandling() {

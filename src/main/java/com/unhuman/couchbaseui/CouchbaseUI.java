@@ -687,6 +687,11 @@ public class CouchbaseUI implements AboutHandler, QuitHandler {
             List<String> hostnames = config.getServerHostnames();
             for (String hostname : hostnames) {
                 comboClusterPicker.addItem(hostname);
+
+                // restore the most recently used cluster if possible
+                if (hostname.equals(config.getLastCluster())) {
+                    comboClusterPicker.setSelectedItem(hostname);
+                }
             }
             memoryHandler.setConfig(config);
             // Flush the logs - hibernate logs something we don't need to worry about
