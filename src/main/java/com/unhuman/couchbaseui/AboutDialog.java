@@ -73,8 +73,8 @@ public class AboutDialog extends JDialog {
         panel3.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         contentPane.add(panel3, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
-        Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 18, label1.getFont());
-        if (label1Font != null) label1.setFont(label1Font);
+//        Font label1Font = this.$$$getFont$$$(null, Font.BOLD, 18, label1.getFont());
+//        if (label1Font != null) label1.setFont(label1Font);
         label1.setHorizontalAlignment(2);
         label1.setHorizontalTextPosition(2);
         label1.setOpaque(true);
@@ -109,21 +109,21 @@ public class AboutDialog extends JDialog {
     /**
      * @noinspection ALL
      */
-    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
-        if (currentFont == null) return null;
-        String resultName;
-        if (fontName == null) {
-            resultName = currentFont.getName();
-        } else {
-            Font testFont = new Font(fontName, Font.PLAIN, 10);
-            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
-                resultName = fontName;
-            } else {
-                resultName = currentFont.getName();
-            }
-        }
-        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
-    }
+//    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
+//        if (currentFont == null) return null;
+//        String resultName;
+//        if (fontName == null) {
+//            resultName = currentFont.getName();
+//        } else {
+//            Font testFont = new Font(fontName, Font.PLAIN, 10);
+//            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+//                resultName = fontName;
+//            } else {
+//                resultName = currentFont.getName();
+//            }
+//        }
+//        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
+//    }
 
     /**
      * @noinspection ALL
