@@ -8,25 +8,6 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>enforce</id>
-                        <configuration>
-                            <rules>
-                                <dependencyConvergence/>
-                            </rules>
-                        </configuration>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
@@ -89,28 +70,45 @@
             <version>3.2.6</version>
         </dependency>
 
+        <!-- Forced Transitive Dependency Start -->
+        aaaa
+        bbbb
+        <!-- Forced Transitive Dependency End -->
+
         <dependency>
             <groupId>us.monoid.web</groupId>
             <artifactId>resty</artifactId>
             <version>0.3.2</version>
+            <!-- exclusion -->
+            <exclusions>
+                <exclusion>
+                    <groupId>fdsfds</groupId>
+                    <artifactId>fsdfds</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
+        <!-- Forced Transitive Dependency Start -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.13.2</version>
+            <version>2.13.0</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.13.2.2</version>
+            <version>2.13.0</version>
         </dependency>
+        <!-- Forced Transitive Dependency End-->
 
+
+<!-- Forced Transitive Dependency Start -->
         <dependency>
             <groupId>com.codingrodent</groupId>
             <artifactId>jackson-json-crypto</artifactId>
             <version>2.2.0</version>
         </dependency>
+        <!-- Forced Transitive Dependency End -->
 
         <!-- needed to be able to capture logs with MemoryAppender2 -->
         <dependency>
@@ -137,5 +135,6 @@
             <version>5.8.2</version>
             <scope>test</scope>
         </dependency>
-    </dependencies>    
+
+    </dependencies>
 </project>
