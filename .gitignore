@@ -2,3 +2,5 @@
 .java-version
 **.iml
 target/*
+pom.xml.bak
+dependency-reduced-pom.xml
