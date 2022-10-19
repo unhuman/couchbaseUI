@@ -99,7 +99,7 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <type>jar</type>
-                <version>2.13.3</version>
+                <version>2.13.4.1</version>
             </dependency>
             <!--DependencyAngel End-->
             <!--DependencyAngel Start-->
@@ -139,7 +139,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.13.3</version>
+            <version>2.13.4.1</version>
         </dependency>
         <dependency>
             <groupId>com.codingrodent</groupId>
